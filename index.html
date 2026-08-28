@@ -123,6 +123,12 @@
     </section>
 
     <section class="section">
+      <div class="section-title">Fábrica de semillas</div>
+      <label class="task"><input type="checkbox" data-id="semillas-trigo"><span class="checkmark"></span><span class="task-text">Llevar trigo</span></label>
+      <label class="task"><input type="checkbox" data-id="semillas-maiz"><span class="checkmark"></span><span class="task-text">Llevar maíz</span></label>
+    </section>
+
+    <section class="section">
       <div class="section-title">Recogidas</div>
       <label class="task"><input type="checkbox" data-id="ovejas-lana"><span class="checkmark"></span><span class="task-text">Recoger palés de lana</span></label>
       <label class="task"><input type="checkbox" data-id="invernaderos-miel"><span class="checkmark"></span><span class="task-text">Recoger palés de miel</span></label>
@@ -132,7 +138,7 @@
   </main>
 
   <script>
-    const STORAGE_KEY="fs25-checklist-v1";
+    const STORAGE_KEY="fs25-checklist-v2";
     const checkboxes=[...document.querySelectorAll('input[type="checkbox"][data-id]')];
     const counter=document.getElementById("counter");
     const allDone=document.getElementById("allDone");
