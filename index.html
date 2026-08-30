@@ -1,30 +1,470 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="FS25 Checklist"><meta name="theme-color" content="#f5f5f7"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><title>FS25 · Checklist diario</title><style>
-:root{--bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;--accent:#0a7f3f;--soft:#e9f7ef;--shadow:0 2px 14px rgba(0,0,0,.06)}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}.app{width:min(760px,100%);margin:0 auto}header{margin:6px 2px 14px}h1{font-size:clamp(28px,7vw,40px);line-height:1.05;margin:0 0 14px;letter-spacing:-.03em}.notes{width:100%;min-height:86px;resize:vertical;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--text);font:inherit;font-size:16px;line-height:1.4;padding:14px 15px;outline:none;box-shadow:var(--shadow)}.notes::placeholder{color:#9a9aa0}.status{position:sticky;top:max(8px,env(safe-area-inset-top));z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin:14px 0;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(0,0,0,.05);border-radius:18px;box-shadow:var(--shadow)}.status-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;font-weight:700}.counter{font-size:22px;font-weight:750;line-height:1.1}button{border:0;border-radius:14px;background:var(--text);color:white;font:inherit;font-weight:700;padding:12px 14px;min-height:44px;cursor:pointer;white-space:nowrap}.switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#e9e9ec;padding:4px;border-radius:14px;margin-bottom:16px}.switch button{min-height:42px;background:transparent;color:var(--muted);border-radius:11px;padding:8px 10px}.switch button.active{background:var(--card);color:var(--text);box-shadow:0 1px 5px rgba(0,0,0,.08)}.section{background:var(--card);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px}.section-title{padding:16px 18px 10px;font-size:18px;font-weight:800;letter-spacing:-.01em}.task{display:flex;align-items:center;gap:14px;min-height:62px;padding:12px 16px;border-top:1px solid var(--line);cursor:pointer;user-select:none;-webkit-user-select:none}.task input{position:absolute;opacity:0;pointer-events:none}.check{width:30px;height:30px;flex:0 0 30px;border-radius:9px;border:2px solid #b8b8bd;display:grid;place-items:center;background:white}.check:after{content:"";width:8px;height:14px;border:solid white;border-width:0 3px 3px 0;transform:rotate(45deg) scale(0);margin-top:-2px}.task input:checked+.check{background:var(--accent);border-color:var(--accent)}.task input:checked+.check:after{transform:rotate(45deg) scale(1)}.task-text{flex:1;min-width:0;font-size:17px;line-height:1.3;font-weight:600}.task.done{background:var(--soft)}.task.done .task-text{color:var(--muted);text-decoration:line-through}.done-msg{display:none;text-align:center;padding:18px;margin:0 0 16px;background:var(--soft);color:var(--accent);border-radius:18px;font-weight:800}.done-msg.visible{display:block}.view{display:none}.view.active{display:block}
-</style></head><body><main class="app"><header><h1>FS25 · Checklist diario</h1><textarea id="notes" class="notes" placeholder="Notas rápidas: siguiente paso, compra pendiente, terreno, etc."></textarea></header><section class="status"><div><div class="status-label">Estado del día</div><div class="counter" id="counter">0 pendientes</div></div><button id="reset" type="button">Nuevo día</button></section><nav class="switch"><button id="byFactory" class="active">Por fábrica</button><button id="byProduct">Por producto</button></nav><div class="done-msg" id="doneMsg">Todo revisado para este día.</div><div id="factoryView" class="view active"></div><div id="productView" class="view"></div></main><script>
-const STATE='fs25-checklist-v2',NOTES='fs25-notes-v2',VIEW='fs25-view-v2';
-const groups=[
-['Azucarera',[['az-rem','Remolacha','Remolacha'],['az-sor','Sorgo','Sorgo']]],
-['Maltería',[['mal-ceb','Cebada','Cebada'],['mal-sor','Sorgo','Sorgo'],['mal-tri','Trigo','Trigo']]],
-['Aserradero',[['ase-mad','Madera / troncos','Madera / troncos']]],
-['Fermentador pequeño',[['fer-hie','Hierba','Hierba']]],
-['Beet Pulp',[['bee-rem','Remolacha','Remolacha'],['bee-die','Diésel','Diésel']]],
-['Taller',[['tal-die','Diésel','Diésel']]],
-['Fábrica de semillas',[['sem-tri','Trigo','Trigo'],['sem-mai','Maíz','Maíz']]],
-['Holzfäller / Leñador',[['hol-die','Diésel','Diésel']]],
-['BGA',[['bga-ens','Ensilaje','Ensilaje']]],
-['Harinera',[['har-lar','Arroz de grano largo','Arroz de grano largo'],['har-nor','Arroz normal','Arroz normal'],['har-tri','Trigo','Trigo']]],
-['Gallinas',[['gal-cer','Trigo, cebada o sorgo','Trigo, cebada o sorgo']]],
-['Vacas',[['vac-ens','Ensilado','Ensilado'],['vac-hen','Heno','Heno'],['vac-paj','Paja','Paja'],['vac-min','Alimento mineral','Alimento mineral'],['vac-sue','Paja para suelo de vacas','Paja para suelo de vacas'],['vac-lec','Recoger leche','Leche'],['vac-pur','Recoger purín','Purín'],['vac-est','Recoger estiércol','Estiércol']]],
-['Recogidas',[['rec-lan','Palés de lana de ovejas','Lana de ovejas'],['rec-mie','Palés de miel de invernaderos','Miel de invernaderos']]],
-['Ventas',[['ven-lan','Lana de ovejas','Lana de ovejas'],['ven-vir','Virutas de HOF o bosques','Virutas de HOF o bosques'],['ven-mie','Miel de invernaderos','Miel de invernaderos'],['ven-rem','Remolacha cortada de fábrica','Remolacha cortada']]]
-];
-const meta={};groups.forEach(([g,ts])=>ts.forEach(([id,label,product])=>meta[id]={id,label,product,group:g}));
-const fv=document.getElementById('factoryView'),pv=document.getElementById('productView'),counter=document.getElementById('counter'),doneMsg=document.getElementById('doneMsg'),notes=document.getElementById('notes');
-const read=()=>{try{return JSON.parse(localStorage.getItem(STATE)||'{}')}catch(e){return{}}};const write=s=>localStorage.setItem(STATE,JSON.stringify(s));
-function row(id,text){const l=document.createElement('label');l.className='task';l.innerHTML=`<input type="checkbox" data-id="${id}"><span class="check"></span><span class="task-text"></span>`;l.querySelector('.task-text').textContent=text;return l}
-function render(){groups.forEach(([g,ts])=>{const s=document.createElement('section');s.className='section';s.innerHTML=`<div class="section-title"></div>`;s.querySelector('.section-title').textContent=g;ts.forEach(([id,label])=>s.appendChild(row(id,label)));fv.appendChild(s)});const bp={};Object.values(meta).forEach(t=>(bp[t.product]??=[]).push(t));Object.keys(bp).sort((a,b)=>a.localeCompare(b,'es')).forEach(p=>{const s=document.createElement('section');s.className='section';s.innerHTML=`<div class="section-title"></div>`;s.querySelector('.section-title').textContent=p;bp[p].forEach(t=>s.appendChild(row(t.id,t.group)));pv.appendChild(s)})}
-function sync(){const s=read();document.querySelectorAll('input[data-id]').forEach(cb=>{cb.checked=!!s[cb.dataset.id];cb.closest('.task').classList.toggle('done',cb.checked)});const ids=Object.keys(meta),pending=ids.filter(id=>!s[id]).length;counter.textContent=pending===1?'1 pendiente':`${pending} pendientes`;doneMsg.classList.toggle('visible',pending===0)}
-function bind(){document.querySelectorAll('input[data-id]').forEach(cb=>cb.addEventListener('change',()=>{const s=read();s[cb.dataset.id]=cb.checked;write(s);sync()}))}
-function setView(v){const f=v!=='product';fv.classList.toggle('active',f);pv.classList.toggle('active',!f);byFactory.classList.toggle('active',f);byProduct.classList.toggle('active',!f);localStorage.setItem(VIEW,f?'factory':'product')}
-byFactory.onclick=()=>setView('factory');byProduct.onclick=()=>setView('product');notes.value=localStorage.getItem(NOTES)||'';notes.oninput=()=>localStorage.setItem(NOTES,notes.value);reset.onclick=()=>{if(!confirm('¿Empezar un nuevo día y desmarcar todas las tareas?'))return;write({});notes.value='';localStorage.removeItem(NOTES);sync();scrollTo({top:0,behavior:'smooth'})};render();bind();sync();setView(localStorage.getItem(VIEW)||'factory');if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'));
-</script></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="FS25 Checklist" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#f5f5f7" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <title>FS25 · Checklist diario</title>
+  <style>
+    :root{
+      --bg:#f5f5f7; --card:#fff; --text:#1d1d1f; --muted:#6e6e73;
+      --line:#e5e5ea; --accent:#0a7f3f; --accent-soft:#e9f7ef;
+      --shadow:0 2px 14px rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
+    body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+    .app{width:min(760px,100%);margin:0 auto}
+    header{margin:6px 2px 14px}
+    h1{font-size:clamp(28px,7vw,40px);line-height:1.05;margin:0 0 14px;letter-spacing:-.03em}
+
+    .notes-wrap{position:relative}
+    .notes{
+      width:100%;
+      min-height:86px;
+      overflow:hidden;
+      resize:none;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:var(--card);
+      color:var(--text);
+      font:inherit;
+      font-size:16px;
+      line-height:1.45;
+      padding:14px 15px 46px;
+      outline:none;
+      box-shadow:var(--shadow);
+    }
+    .notes:focus{border-color:#b7b7bd}
+    .notes::placeholder{color:#9a9aa0}
+    .clear-notes{
+      position:absolute;
+      right:10px;
+      bottom:9px;
+      min-height:34px;
+      padding:7px 10px;
+      border-radius:10px;
+      background:#efeff2;
+      color:var(--text);
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .status{
+      position:sticky;top:max(8px,env(safe-area-inset-top));z-index:10;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 16px;margin:14px 0;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+      border:1px solid rgba(0,0,0,.05);border-radius:18px;box-shadow:var(--shadow)
+    }
+    .status-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;font-weight:700}
+    .counter{font-size:22px;font-weight:750;line-height:1.1}
+
+    button{
+      border:0;border-radius:14px;background:var(--text);color:white;font:inherit;font-weight:700;
+      padding:12px 14px;min-height:44px;cursor:pointer;white-space:nowrap
+    }
+    button:active{transform:scale(.98)}
+
+    .view-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#e9e9ec;padding:4px;border-radius:14px;margin-bottom:16px}
+    .view-switch button{min-height:42px;background:transparent;color:var(--muted);border-radius:11px;padding:8px 10px}
+    .view-switch button.active{background:var(--card);color:var(--text);box-shadow:0 1px 5px rgba(0,0,0,.08)}
+
+    .section{background:var(--card);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px}
+    .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 10px}
+    .section-title{font-size:18px;font-weight:800;letter-spacing:-.01em}
+    .section-count{color:var(--muted);font-size:13px;font-weight:700;white-space:nowrap}
+    .section-count.done{color:var(--accent)}
+
+    .task{
+      display:flex;align-items:center;gap:14px;min-height:62px;padding:12px 16px;
+      border-top:1px solid var(--line);cursor:pointer;user-select:none;-webkit-user-select:none;
+      transition:background .15s ease
+    }
+    .task:first-of-type{border-top:0}.task:active{background:#f2f2f4}
+    .task input{position:absolute;opacity:0;pointer-events:none}
+    .checkmark{
+      width:30px;height:30px;flex:0 0 30px;border-radius:9px;border:2px solid #b8b8bd;
+      display:grid;place-items:center;transition:all .15s ease;background:white
+    }
+    .checkmark::after{
+      content:"";width:8px;height:14px;border:solid white;border-width:0 3px 3px 0;
+      transform:rotate(45deg) scale(0);margin-top:-2px;transition:transform .12s ease
+    }
+    .task input:checked + .checkmark{background:var(--accent);border-color:var(--accent)}
+    .task input:checked + .checkmark::after{transform:rotate(45deg) scale(1)}
+    .task-text{flex:1;min-width:0;font-size:17px;line-height:1.3;font-weight:600}
+    .task.done{background:var(--accent-soft)}
+    .task.done .task-text{color:var(--muted);text-decoration:line-through}
+
+    .all-done{
+      display:none;text-align:center;padding:18px;margin:0 0 16px;background:var(--accent-soft);
+      color:var(--accent);border-radius:18px;font-weight:800
+    }
+    .all-done.visible{display:block}
+    .view{display:none}.view.active{display:block}
+
+    @media (max-width:420px){
+      .counter{font-size:20px}
+      .status{padding:12px 13px}
+      button{padding-inline:12px}
+      .section-title-row{align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>FS25 · Checklist diario</h1>
+      <div class="notes-wrap">
+        <textarea id="notes" class="notes" placeholder="• Siguiente paso&#10;• Compra pendiente&#10;• Terreno por comprar"></textarea>
+        <button id="clearNotesBtn" class="clear-notes" type="button">Vaciar notas</button>
+      </div>
+    </header>
+
+    <section class="status" aria-live="polite">
+      <div>
+        <div class="status-label">Estado del día</div>
+        <div class="counter" id="counter">0 pendientes</div>
+      </div>
+      <button id="resetBtn" type="button">Nuevo día</button>
+    </section>
+
+    <nav class="view-switch" aria-label="Cambiar vista">
+      <button id="factoryViewBtn" class="active" type="button">Por fábrica</button>
+      <button id="productViewBtn" type="button">Por producto</button>
+    </nav>
+
+    <div class="all-done" id="allDone">Todo revisado para este día.</div>
+    <div id="factoryView" class="view active"></div>
+    <div id="productView" class="view"></div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "fs25-checklist-v22";
+    const NOTES_KEY = "fs25-checklist-notes-v22";
+    const VIEW_KEY = "fs25-checklist-view-v22";
+
+    const groups = [
+      { name:"Azucarera", tasks:[
+        ["azucarera-remolacha","Remolacha","Remolacha"],
+        ["azucarera-sorgo","Sorgo","Sorgo"]
+      ]},
+      { name:"Maltería", tasks:[
+        ["malteria-cebada","Cebada","Cebada"],
+        ["malteria-sorgo","Sorgo","Sorgo"],
+        ["malteria-trigo","Trigo","Trigo"]
+      ]},
+      { name:"Aserradero", tasks:[
+        ["aserradero-madera","Madera / troncos","Madera / troncos"]
+      ]},
+      { name:"Fermentador pequeño", tasks:[
+        ["fermentador-hierba","Hierba","Hierba"]
+      ]},
+      { name:"Beet Pulp", tasks:[
+        ["beetpulp-remolacha","Remolacha","Remolacha"],
+        ["beetpulp-diesel","Diésel","Diésel"]
+      ]},
+      { name:"Taller", tasks:[
+        ["taller-diesel","Diésel","Diésel"]
+      ]},
+      { name:"Fábrica de semillas", tasks:[
+        ["semillas-trigo","Trigo","Trigo"],
+        ["semillas-maiz","Maíz","Maíz"]
+      ]},
+      { name:"Holzfäller / Leñador", tasks:[
+        ["holzfaller-diesel","Diésel","Diésel"]
+      ]},
+      { name:"BGA", tasks:[
+        ["bga-ensilaje","Ensilaje","Ensilaje"]
+      ]},
+      { name:"Harinera", tasks:[
+        ["harinera-arroz-largo","Arroz de grano largo","Arroz de grano largo"],
+        ["harinera-arroz-normal","Arroz normal","Arroz normal"],
+        ["harinera-trigo","Trigo","Trigo"]
+      ]},
+      { name:"Gallinas", tasks:[
+        ["gallinas-cereal","Trigo, cebada o sorgo","Trigo, cebada o sorgo"],
+        ["gallinas-huevos","Recoger huevos","Huevos"]
+      ]},
+      { name:"Vacas", tasks:[
+        ["vacas-ensilado","Ensilado","Ensilado"],
+        ["vacas-heno","Heno","Heno"],
+        ["vacas-paja","Paja","Paja"],
+        ["vacas-mineral","Alimento mineral","Alimento mineral"],
+        ["vacas-paja-suelo","Paja para suelo de vacas","Paja para suelo de vacas"],
+        ["vacas-leche","Recoger leche","Leche"],
+        ["vacas-purin","Recoger purín","Purín"],
+        ["vacas-estiercol","Recoger estiércol","Estiércol"]
+      ]},
+      { name:"Ovejas", tasks:[
+        ["ovejas-lana","Recoger lana","Lana de ovejas"]
+      ]},
+      { name:"Invernaderos", tasks:[
+        ["invernaderos-miel","Recoger miel","Miel de invernaderos"]
+      ]},
+      { name:"Ventas", tasks:[
+        ["venta-lana","Lana de ovejas","Lana de ovejas"],
+        ["venta-virutas","Virutas de HOF o bosques","Virutas de HOF o bosques"],
+        ["venta-miel","Miel de invernaderos","Miel de invernaderos"],
+        ["venta-remolacha-cortada","Remolacha cortada de fábrica","Remolacha cortada"]
+      ]}
+    ];
+
+    const factoryView = document.getElementById("factoryView");
+    const productView = document.getElementById("productView");
+    const factoryViewBtn = document.getElementById("factoryViewBtn");
+    const productViewBtn = document.getElementById("productViewBtn");
+    const counter = document.getElementById("counter");
+    const allDone = document.getElementById("allDone");
+    const resetBtn = document.getElementById("resetBtn");
+    const notes = document.getElementById("notes");
+    const clearNotesBtn = document.getElementById("clearNotesBtn");
+
+    const taskMeta = {};
+    groups.forEach(group => {
+      group.tasks.forEach(([id,label,product]) => {
+        taskMeta[id] = { id, label, product, group:group.name };
+      });
+    });
+
+    function readState(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch(e) { return {}; }
+    }
+
+    function writeState(state){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function taskRow(id, text){
+      const label = document.createElement("label");
+      label.className = "task";
+      label.dataset.taskId = id;
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.dataset.id = id;
+
+      const checkmark = document.createElement("span");
+      checkmark.className = "checkmark";
+
+      const taskText = document.createElement("span");
+      taskText.className = "task-text";
+      taskText.textContent = text;
+
+      label.append(input, checkmark, taskText);
+      return label;
+    }
+
+    function sectionTitleRow(titleText, sectionKey){
+      const row = document.createElement("div");
+      row.className = "section-title-row";
+
+      const title = document.createElement("div");
+      title.className = "section-title";
+      title.textContent = titleText;
+
+      const count = document.createElement("div");
+      count.className = "section-count";
+      count.dataset.sectionKey = sectionKey;
+
+      row.append(title, count);
+      return row;
+    }
+
+    function renderFactoryView(){
+      factoryView.innerHTML = "";
+
+      groups.forEach(group => {
+        const section = document.createElement("section");
+        section.className = "section";
+        section.dataset.sectionType = "factory";
+        section.dataset.sectionKey = group.name;
+
+        section.appendChild(sectionTitleRow(group.name, group.name));
+        group.tasks.forEach(([id,label]) => section.appendChild(taskRow(id,label)));
+
+        factoryView.appendChild(section);
+      });
+    }
+
+    function renderProductView(){
+      productView.innerHTML = "";
+      const byProduct = {};
+
+      Object.values(taskMeta).forEach(task => {
+        if(!byProduct[task.product]) byProduct[task.product] = [];
+        byProduct[task.product].push(task);
+      });
+
+      Object.keys(byProduct)
+        .sort((a,b) => a.localeCompare(b,"es",{sensitivity:"base"}))
+        .forEach(product => {
+          const section = document.createElement("section");
+          section.className = "section";
+          section.dataset.sectionType = "product";
+          section.dataset.sectionKey = product;
+
+          section.appendChild(sectionTitleRow(product, product));
+          byProduct[product].forEach(task => section.appendChild(taskRow(task.id, task.group)));
+
+          productView.appendChild(section);
+        });
+    }
+
+    function sortTasksWithinSection(section, state){
+      const rows = [...section.querySelectorAll(".task")];
+      rows.sort((a,b) => {
+        const aDone = Boolean(state[a.dataset.taskId]);
+        const bDone = Boolean(state[b.dataset.taskId]);
+        if(aDone === bDone) return 0;
+        return aDone ? 1 : -1;
+      });
+      rows.forEach(row => section.appendChild(row));
+    }
+
+    function updateSectionCounts(state){
+      document.querySelectorAll(".section").forEach(section => {
+        const ids = [...section.querySelectorAll(".task")].map(row => row.dataset.taskId);
+        const pending = ids.filter(id => !state[id]).length;
+        const countEl = section.querySelector(".section-count");
+
+        if(pending === 0){
+          countEl.textContent = "✓";
+          countEl.classList.add("done");
+        }else{
+          countEl.textContent = pending === 1 ? "1 pendiente" : `${pending} pendientes`;
+          countEl.classList.remove("done");
+        }
+      });
+    }
+
+    function syncUI(){
+      const state = readState();
+
+      document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+        cb.checked = Boolean(state[cb.dataset.id]);
+        cb.closest(".task").classList.toggle("done", cb.checked);
+      });
+
+      document.querySelectorAll(".section").forEach(section => sortTasksWithinSection(section, state));
+      updateSectionCounts(state);
+
+      const ids = Object.keys(taskMeta);
+      const done = ids.filter(id => Boolean(state[id])).length;
+      const pending = ids.length - done;
+
+      counter.textContent = pending === 1 ? "1 pendiente" : `${pending} pendientes`;
+      allDone.classList.toggle("visible", pending === 0);
+    }
+
+    function bindCheckboxes(){
+      document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+        cb.addEventListener("change", () => {
+          const state = readState();
+          state[cb.dataset.id] = cb.checked;
+          writeState(state);
+          syncUI();
+        });
+      });
+    }
+
+    function setView(view){
+      const factory = view !== "product";
+      factoryView.classList.toggle("active", factory);
+      productView.classList.toggle("active", !factory);
+      factoryViewBtn.classList.toggle("active", factory);
+      productViewBtn.classList.toggle("active", !factory);
+      localStorage.setItem(VIEW_KEY, factory ? "factory" : "product");
+    }
+
+    function autoResizeNotes(){
+      notes.style.height = "auto";
+      notes.style.height = notes.scrollHeight + "px";
+    }
+
+    function normalizeBullets(value){
+      const lines = value.split("\n");
+      return lines.map(line => {
+        const trimmed = line.replace(/^\s*•\s?/, "");
+        return trimmed.length ? "• " + trimmed : "• ";
+      }).join("\n");
+    }
+
+    notes.value = localStorage.getItem(NOTES_KEY) || "";
+    if(notes.value && !notes.value.trim().startsWith("•")){
+      notes.value = normalizeBullets(notes.value);
+    }
+    autoResizeNotes();
+
+    notes.addEventListener("focus", () => {
+      if(!notes.value.trim()){
+        notes.value = "• ";
+        localStorage.setItem(NOTES_KEY, notes.value);
+        autoResizeNotes();
+        requestAnimationFrame(() => notes.setSelectionRange(notes.value.length, notes.value.length));
+      }
+    });
+
+    notes.addEventListener("keydown", event => {
+      if(event.key === "Enter"){
+        event.preventDefault();
+        const start = notes.selectionStart;
+        const end = notes.selectionEnd;
+        const before = notes.value.slice(0,start);
+        const after = notes.value.slice(end);
+        const insert = "\n• ";
+        notes.value = before + insert + after;
+        const pos = start + insert.length;
+        notes.setSelectionRange(pos,pos);
+        localStorage.setItem(NOTES_KEY, notes.value);
+        autoResizeNotes();
+      }
+    });
+
+    notes.addEventListener("input", () => {
+      localStorage.setItem(NOTES_KEY, notes.value);
+      autoResizeNotes();
+    });
+
+    clearNotesBtn.addEventListener("click", () => {
+      if(!notes.value.trim()) return;
+      if(!confirm("¿Vaciar todas las notas?")) return;
+      notes.value = "";
+      localStorage.removeItem(NOTES_KEY);
+      autoResizeNotes();
+      notes.focus();
+    });
+
+    factoryViewBtn.addEventListener("click", () => setView("factory"));
+    productViewBtn.addEventListener("click", () => setView("product"));
+
+    resetBtn.addEventListener("click", () => {
+      if(!confirm("¿Empezar un nuevo día y desmarcar todas las tareas?")) return;
+
+      const blank = {};
+      Object.keys(taskMeta).forEach(id => blank[id] = false);
+      writeState(blank);
+      syncUI();
+      window.scrollTo({top:0,behavior:"smooth"});
+    });
+
+    renderFactoryView();
+    renderProductView();
+    bindCheckboxes();
+    syncUI();
+    setView(localStorage.getItem(VIEW_KEY) || "factory");
+
+    if("serviceWorker" in navigator){
+      window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js"));
+    }
+  </script>
+</body>
+</html>
