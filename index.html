@@ -1,469 +1,1381 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="FS25 Checklist" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="theme-color" content="#f5f5f7" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icon-180.png" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FS25 Checklist">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f5f5f7">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
   <title>FS25 · Checklist diario</title>
+
   <style>
     :root{
-      --bg:#f5f5f7; --card:#fff; --text:#1d1d1f; --muted:#6e6e73;
-      --line:#e5e5ea; --accent:#0a7f3f; --accent-soft:#e9f7ef;
+      --bg:#f5f5f7;
+      --card:#ffffff;
+      --text:#1d1d1f;
+      --muted:#6e6e73;
+      --line:#e5e5ea;
+      --accent:#0a7f3f;
+      --accent-soft:#e9f7ef;
+      --sage:#6f736c;
+      --danger:#d6453d;
       --shadow:0 2px 14px rgba(0,0,0,.06);
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
-    body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
-    .app{width:min(760px,100%);margin:0 auto}
-    header{margin:6px 2px 14px}
-    h1{font-size:clamp(28px,7vw,40px);line-height:1.05;margin:0 0 14px;letter-spacing:-.03em}
 
-    .notes-wrap{position:relative}
-    .notes{
-      width:100%;
-      min-height:86px;
-      overflow:hidden;
-      resize:none;
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:var(--card);
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{
+      margin:0;
+      background:var(--bg);
       color:var(--text);
-      font:inherit;
-      font-size:16px;
-      line-height:1.45;
-      padding:14px 15px 46px;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+    }
+
+    body{
+      min-height:100vh;
+      padding:max(16px,env(safe-area-inset-top))
+              max(14px,env(safe-area-inset-right))
+              max(28px,env(safe-area-inset-bottom))
+              max(14px,env(safe-area-inset-left));
+    }
+
+    .app{width:min(760px,100%);margin:0 auto}
+    header{margin:6px 2px 16px}
+    h1{
+      margin:0;
+      font-size:clamp(28px,7vw,40px);
+      line-height:1.05;
+      letter-spacing:-.03em;
+    }
+
+    button,input{font:inherit}
+
+    button{
+      border:0;
+      border-radius:14px;
+      background:var(--text);
+      color:#fff;
+      min-height:44px;
+      padding:10px 14px;
+      font-weight:750;
+      cursor:pointer;
+    }
+
+    button:active{transform:scale(.98)}
+    button.secondary{background:#e9e9ec;color:var(--text)}
+    button.sage{background:var(--sage);color:#fff}
+
+    .panel{
+      background:var(--card);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+
+    .panel-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:16px 18px 12px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:19px;
+      line-height:1.2;
+      font-weight:800;
+      letter-spacing:-.01em;
+    }
+
+    .general-add{
+      display:flex;
+      gap:8px;
+      padding:0 14px 14px;
+    }
+
+    .general-add input,
+    .modal input,
+    .edit-input{
+      width:100%;
+      min-width:0;
+      border:1px solid var(--line);
+      border-radius:13px;
+      background:#fff;
+      color:var(--text);
+      min-height:44px;
+      padding:10px 12px;
       outline:none;
+      font-size:16px;
+    }
+
+    .general-add input:focus,
+    .modal input:focus,
+    .edit-input:focus{border-color:#b7b7bd}
+
+    .general-empty{
+      color:var(--muted);
+      padding:0 18px 16px;
+      font-size:14px;
+    }
+
+    .status{
+      position:sticky;
+      top:max(8px,env(safe-area-inset-top));
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      margin:14px 0;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      border:1px solid rgba(0,0,0,.05);
+      border-radius:18px;
       box-shadow:var(--shadow);
     }
-    .notes:focus{border-color:#b7b7bd}
-    .notes::placeholder{color:#9a9aa0}
-    .clear-notes{
-      position:absolute;
-      right:10px;
-      bottom:9px;
-      min-height:34px;
-      padding:7px 10px;
-      border-radius:10px;
-      background:#efeff2;
+
+    .status-label{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:2px;
+      font-weight:700;
+    }
+
+    .counter{
+      font-size:22px;
+      line-height:1.1;
+      font-weight:800;
+    }
+
+    .view-switch{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:4px;
+      padding:4px;
+      margin-bottom:12px;
+      border-radius:14px;
+      background:#e9e9ec;
+    }
+
+    .view-switch button{
+      min-height:42px;
+      padding:8px 10px;
+      border-radius:11px;
+      background:transparent;
+      color:var(--muted);
+    }
+
+    .view-switch button.active{
+      background:#fff;
       color:var(--text);
+      box-shadow:0 1px 5px rgba(0,0,0,.08);
+    }
+
+    .toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .toolbar-left,.toolbar-right{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .view{display:none}
+    .view.active{display:block}
+
+    .group-label{
+      margin:20px 4px 10px;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .factory-card{
+      background:var(--card);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+
+    .factory-card.completed{
+      background:var(--sage);
+      color:#fff;
+    }
+
+    .factory-card.completed .factory-sub,
+    .factory-card.completed .pending-badge{
+      color:rgba(255,255,255,.83);
+    }
+
+    .factory-card.completed .task{
+      border-top-color:rgba(255,255,255,.16);
+    }
+
+    .factory-card.completed .task.done{
+      background:rgba(255,255,255,.08);
+    }
+
+    .factory-card.completed .task.done .task-text{
+      color:rgba(255,255,255,.92);
+    }
+
+    .factory-head{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:15px 16px 11px;
+    }
+
+    .factory-title-wrap{flex:1;min-width:0}
+    .factory-title{
+      font-size:18px;
+      line-height:1.2;
+      font-weight:800;
+      letter-spacing:-.01em;
+    }
+
+    .factory-sub{
+      margin-top:3px;
+      color:var(--muted);
       font-size:13px;
       font-weight:700;
     }
 
-    .status{
-      position:sticky;top:max(8px,env(safe-area-inset-top));z-index:10;
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      padding:14px 16px;margin:14px 0;
-      background:rgba(255,255,255,.92);
-      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-      border:1px solid rgba(0,0,0,.05);border-radius:18px;box-shadow:var(--shadow)
+    .pending-badge{
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+      white-space:nowrap;
     }
-    .status-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;font-weight:700}
-    .counter{font-size:22px;font-weight:750;line-height:1.1}
-
-    button{
-      border:0;border-radius:14px;background:var(--text);color:white;font:inherit;font-weight:700;
-      padding:12px 14px;min-height:44px;cursor:pointer;white-space:nowrap
-    }
-    button:active{transform:scale(.98)}
-
-    .view-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#e9e9ec;padding:4px;border-radius:14px;margin-bottom:16px}
-    .view-switch button{min-height:42px;background:transparent;color:var(--muted);border-radius:11px;padding:8px 10px}
-    .view-switch button.active{background:var(--card);color:var(--text);box-shadow:0 1px 5px rgba(0,0,0,.08)}
-
-    .section{background:var(--card);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px}
-    .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 10px}
-    .section-title{font-size:18px;font-weight:800;letter-spacing:-.01em}
-    .section-count{color:var(--muted);font-size:13px;font-weight:700;white-space:nowrap}
-    .section-count.done{color:var(--accent)}
 
     .task{
-      display:flex;align-items:center;gap:14px;min-height:62px;padding:12px 16px;
-      border-top:1px solid var(--line);cursor:pointer;user-select:none;-webkit-user-select:none;
-      transition:background .15s ease
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-height:60px;
+      padding:11px 16px;
+      border-top:1px solid var(--line);
+      background:transparent;
+      user-select:none;
+      -webkit-user-select:none;
     }
-    .task:first-of-type{border-top:0}.task:active{background:#f2f2f4}
-    .task input{position:absolute;opacity:0;pointer-events:none}
+
+    .task-label{
+      flex:1;
+      min-width:0;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      cursor:pointer;
+    }
+
+    .task input[type="checkbox"]{
+      position:absolute;
+      opacity:0;
+      pointer-events:none;
+    }
+
     .checkmark{
-      width:30px;height:30px;flex:0 0 30px;border-radius:9px;border:2px solid #b8b8bd;
-      display:grid;place-items:center;transition:all .15s ease;background:white
+      width:30px;
+      height:30px;
+      flex:0 0 30px;
+      border-radius:9px;
+      border:2px solid #b8b8bd;
+      display:grid;
+      place-items:center;
+      background:#fff;
+      transition:all .15s ease;
     }
+
     .checkmark::after{
-      content:"";width:8px;height:14px;border:solid white;border-width:0 3px 3px 0;
-      transform:rotate(45deg) scale(0);margin-top:-2px;transition:transform .12s ease
+      content:"";
+      width:8px;
+      height:14px;
+      border:solid #fff;
+      border-width:0 3px 3px 0;
+      transform:rotate(45deg) scale(0);
+      margin-top:-2px;
+      transition:transform .12s ease;
     }
-    .task input:checked + .checkmark{background:var(--accent);border-color:var(--accent)}
-    .task input:checked + .checkmark::after{transform:rotate(45deg) scale(1)}
-    .task-text{flex:1;min-width:0;font-size:17px;line-height:1.3;font-weight:600}
-    .task.done{background:var(--accent-soft)}
-    .task.done .task-text{color:var(--muted);text-decoration:line-through}
+
+    .task input:checked + .checkmark{
+      background:var(--accent);
+      border-color:var(--accent);
+    }
+
+    .task input:checked + .checkmark::after{
+      transform:rotate(45deg) scale(1);
+    }
+
+    .task-text{
+      flex:1;
+      min-width:0;
+      font-size:17px;
+      line-height:1.3;
+      font-weight:600;
+    }
+
+    .task.done{
+      background:var(--accent-soft);
+    }
+
+    .task.done .task-text{
+      color:var(--muted);
+      text-decoration:line-through;
+    }
+
+    .general-row.done{
+      background:#eff1ed;
+    }
+
+    .general-delete{
+      display:none;
+      background:transparent;
+      color:var(--danger);
+      min-height:34px;
+      padding:5px 3px;
+      font-size:13px;
+    }
+
+    .general-row.done .general-delete{
+      display:inline-flex;
+      align-items:center;
+    }
+
+    .completed-divider{
+      padding:9px 16px 5px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.07em;
+      border-top:1px solid var(--line);
+    }
+
+    .swipe-wrap{
+      position:relative;
+      overflow:hidden;
+      background:var(--danger);
+      border-top:1px solid var(--line);
+    }
+
+    .swipe-wrap:first-child{border-top:0}
+
+    .swipe-delete{
+      position:absolute;
+      right:0;
+      top:0;
+      bottom:0;
+      width:92px;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-size:14px;
+      font-weight:800;
+    }
+
+    .swipe-wrap .general-row{
+      position:relative;
+      z-index:2;
+      border-top:0;
+      background:#fff;
+      transition:transform .18s ease;
+    }
+
+    .swipe-wrap .general-row.done{background:#eff1ed}
+    .swipe-wrap .general-row.revealed{transform:translateX(-92px)}
+
+    .product-card{
+      background:var(--card);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+
+    .product-head{
+      padding:16px 18px 10px;
+      font-size:18px;
+      font-weight:800;
+    }
+
+    .empty{
+      padding:18px;
+      color:var(--muted);
+      background:var(--card);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+    }
 
     .all-done{
-      display:none;text-align:center;padding:18px;margin:0 0 16px;background:var(--accent-soft);
-      color:var(--accent);border-radius:18px;font-weight:800
+      display:none;
+      margin-bottom:16px;
+      padding:18px;
+      text-align:center;
+      border-radius:18px;
+      background:#eff1ed;
+      color:var(--sage);
+      font-weight:800;
     }
+
     .all-done.visible{display:block}
-    .view{display:none}.view.active{display:block}
+
+    /* Edit mode */
+    body.editing .factory-card{
+      background:#fff;
+      color:var(--text);
+    }
+
+    body.editing .factory-card.completed .task{
+      border-top-color:var(--line);
+    }
+
+    .edit-input{
+      font-weight:700;
+      min-height:40px;
+      padding:7px 9px;
+    }
+
+    .edit-factory-actions{
+      display:flex;
+      gap:6px;
+      flex:0 0 auto;
+    }
+
+    .move-btn{
+      min-width:38px;
+      min-height:38px;
+      padding:0;
+      border-radius:10px;
+      background:#efeff2;
+      color:var(--text);
+      font-size:18px;
+    }
+
+    .add-input-row{
+      display:none;
+      padding:10px 14px 14px;
+      border-top:1px solid var(--line);
+    }
+
+    body.editing .add-input-row{display:block}
+
+    .add-input-btn{
+      width:100%;
+      min-height:40px;
+      background:#efeff2;
+      color:var(--text);
+      border-radius:12px;
+    }
+
+    /* Modal */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:100;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding:20px max(14px,env(safe-area-inset-right))
+              max(20px,env(safe-area-inset-bottom))
+              max(14px,env(safe-area-inset-left));
+      background:rgba(0,0,0,.34);
+    }
+
+    .modal-backdrop.open{display:flex}
+
+    .modal{
+      width:min(560px,100%);
+      padding:18px;
+      border-radius:22px;
+      background:#fff;
+      box-shadow:0 20px 60px rgba(0,0,0,.22);
+    }
+
+    .modal h3{
+      margin:0 0 14px;
+      font-size:20px;
+    }
+
+    .modal label{
+      display:block;
+      margin:12px 0 6px;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .modal-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:16px;
+    }
+
+    .modal-actions .cancel{
+      background:#ededf0;
+      color:var(--text);
+    }
+
+    @media (min-width:700px){
+      .modal-backdrop{align-items:center}
+    }
 
     @media (max-width:420px){
       .counter{font-size:20px}
       .status{padding:12px 13px}
       button{padding-inline:12px}
-      .section-title-row{align-items:flex-start}
+      .general-delete{display:none !important}
+      .factory-head{align-items:flex-start}
+      .toolbar{align-items:stretch}
+      .toolbar-left,.toolbar-right{align-items:stretch}
     }
   </style>
 </head>
+
 <body>
   <main class="app">
     <header>
       <h1>FS25 · Checklist diario</h1>
-      <div class="notes-wrap">
-        <textarea id="notes" class="notes" placeholder="• Siguiente paso&#10;• Compra pendiente&#10;• Terreno por comprar"></textarea>
-        <button id="clearNotesBtn" class="clear-notes" type="button">Vaciar notas</button>
-      </div>
     </header>
 
-    <section class="status" aria-live="polite">
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Tareas generales</h2>
+      </div>
+
+      <div class="general-add">
+        <input id="generalTaskInput" type="text" placeholder="Añadir tarea general" autocomplete="off">
+        <button id="addGeneralTaskBtn" type="button">Añadir</button>
+      </div>
+
+      <div id="generalList"></div>
+      <div id="generalEmpty" class="general-empty">No hay tareas generales.</div>
+    </section>
+
+    <section class="status">
       <div>
         <div class="status-label">Estado del día</div>
-        <div class="counter" id="counter">0 pendientes</div>
+        <div id="counter" class="counter">0 pendientes</div>
       </div>
       <button id="resetBtn" type="button">Nuevo día</button>
     </section>
 
-    <nav class="view-switch" aria-label="Cambiar vista">
+    <nav class="view-switch">
       <button id="factoryViewBtn" class="active" type="button">Por fábrica</button>
       <button id="productViewBtn" type="button">Por producto</button>
     </nav>
 
-    <div class="all-done" id="allDone">Todo revisado para este día.</div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button id="newFactoryBtn" class="sage" type="button">＋ Nueva fábrica</button>
+      </div>
+      <div class="toolbar-right">
+        <button id="editBtn" class="secondary" type="button">Editar</button>
+      </div>
+    </div>
+
+    <div id="allDone" class="all-done">Todas las fábricas están revisadas.</div>
+
     <div id="factoryView" class="view active"></div>
     <div id="productView" class="view"></div>
   </main>
 
-  <script>
-    const STORAGE_KEY = "fs25-checklist-v22";
-    const NOTES_KEY = "fs25-checklist-notes-v22";
-    const VIEW_KEY = "fs25-checklist-view-v22";
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3 id="modalTitle">Nueva fábrica</h3>
+      <div id="modalFields"></div>
+      <div class="modal-actions">
+        <button id="modalCancelBtn" class="cancel" type="button">Cancelar</button>
+        <button id="modalSaveBtn" type="button">Guardar</button>
+      </div>
+    </div>
+  </div>
 
-    const groups = [
-      { name:"Azucarera", tasks:[
-        ["azucarera-remolacha","Remolacha","Remolacha"],
-        ["azucarera-sorgo","Sorgo","Sorgo"]
+  <script>
+    const CATALOG_KEY = "fs25-catalog-v30";
+    const DAILY_KEY = "fs25-daily-v30";
+    const GENERAL_KEY = "fs25-general-v30";
+    const VIEW_KEY = "fs25-view-v30";
+    const MIGRATION_KEY = "fs25-migrated-v30";
+
+    const initialCatalog = [
+      {id:"azucarera",name:"Azucarera",tasks:[
+        {id:"azucarera-remolacha",name:"Remolacha"},
+        {id:"azucarera-sorgo",name:"Sorgo"}
       ]},
-      { name:"Maltería", tasks:[
-        ["malteria-cebada","Cebada","Cebada"],
-        ["malteria-sorgo","Sorgo","Sorgo"],
-        ["malteria-trigo","Trigo","Trigo"]
+      {id:"malteria",name:"Maltería",tasks:[
+        {id:"malteria-cebada",name:"Cebada"},
+        {id:"malteria-sorgo",name:"Sorgo"},
+        {id:"malteria-trigo",name:"Trigo"}
       ]},
-      { name:"Aserradero", tasks:[
-        ["aserradero-madera","Madera / troncos","Madera / troncos"]
+      {id:"aserradero",name:"Aserradero",tasks:[
+        {id:"aserradero-madera",name:"Madera / troncos"}
       ]},
-      { name:"Fermentador pequeño", tasks:[
-        ["fermentador-hierba","Hierba","Hierba"]
+      {id:"fermentador-pequeno",name:"Fermentador pequeño",tasks:[
+        {id:"fermentador-hierba",name:"Hierba"}
       ]},
-      { name:"Beet Pulp", tasks:[
-        ["beetpulp-remolacha","Remolacha","Remolacha"],
-        ["beetpulp-diesel","Diésel","Diésel"]
+      {id:"beet-pulp",name:"Beet Pulp",tasks:[
+        {id:"beetpulp-remolacha",name:"Remolacha"},
+        {id:"beetpulp-diesel",name:"Diésel"}
       ]},
-      { name:"Taller", tasks:[
-        ["taller-diesel","Diésel","Diésel"]
+      {id:"taller",name:"Taller",tasks:[
+        {id:"taller-diesel",name:"Diésel"}
       ]},
-      { name:"Fábrica de semillas", tasks:[
-        ["semillas-trigo","Trigo","Trigo"],
-        ["semillas-maiz","Maíz","Maíz"]
+      {id:"fabrica-semillas",name:"Fábrica de semillas",tasks:[
+        {id:"semillas-trigo",name:"Trigo"},
+        {id:"semillas-maiz",name:"Maíz"}
       ]},
-      { name:"Holzfäller / Leñador", tasks:[
-        ["holzfaller-diesel","Diésel","Diésel"]
+      {id:"holzfaller",name:"Holzfäller / Leñador",tasks:[
+        {id:"holzfaller-diesel",name:"Diésel"}
       ]},
-      { name:"BGA", tasks:[
-        ["bga-ensilaje","Ensilaje","Ensilaje"]
+      {id:"bga",name:"BGA",tasks:[
+        {id:"bga-ensilaje",name:"Ensilaje"}
       ]},
-      { name:"Harinera", tasks:[
-        ["harinera-arroz-largo","Arroz de grano largo","Arroz de grano largo"],
-        ["harinera-arroz-normal","Arroz normal","Arroz normal"],
-        ["harinera-trigo","Trigo","Trigo"]
+      {id:"harinera",name:"Harinera",tasks:[
+        {id:"harinera-arroz-largo",name:"Arroz de grano largo"},
+        {id:"harinera-arroz-normal",name:"Arroz normal"},
+        {id:"harinera-trigo",name:"Trigo"}
       ]},
-      { name:"Gallinas", tasks:[
-        ["gallinas-cereal","Trigo, cebada o sorgo","Trigo, cebada o sorgo"],
-        ["gallinas-huevos","Recoger huevos","Huevos"]
+      {id:"gallinas",name:"Gallinas",tasks:[
+        {id:"gallinas-cereal",name:"Trigo, cebada o sorgo"},
+        {id:"gallinas-huevos",name:"Recoger huevos"}
       ]},
-      { name:"Vacas", tasks:[
-        ["vacas-ensilado","Ensilado","Ensilado"],
-        ["vacas-heno","Heno","Heno"],
-        ["vacas-paja","Paja","Paja"],
-        ["vacas-mineral","Alimento mineral","Alimento mineral"],
-        ["vacas-paja-suelo","Paja para suelo de vacas","Paja para suelo de vacas"],
-        ["vacas-leche","Recoger leche","Leche"],
-        ["vacas-purin","Recoger purín","Purín"],
-        ["vacas-estiercol","Recoger estiércol","Estiércol"]
+      {id:"vacas",name:"Vacas",tasks:[
+        {id:"vacas-ensilado",name:"Ensilado"},
+        {id:"vacas-heno",name:"Heno"},
+        {id:"vacas-paja",name:"Paja"},
+        {id:"vacas-mineral",name:"Alimento mineral"},
+        {id:"vacas-paja-suelo",name:"Paja para suelo de vacas"},
+        {id:"vacas-leche",name:"Recoger leche"},
+        {id:"vacas-purin",name:"Recoger purín"},
+        {id:"vacas-estiercol",name:"Recoger estiércol"}
       ]},
-      { name:"Ovejas", tasks:[
-        ["ovejas-lana","Recoger lana","Lana de ovejas"]
+      {id:"ovejas",name:"Ovejas",tasks:[
+        {id:"ovejas-lana",name:"Recoger lana"}
       ]},
-      { name:"Invernaderos", tasks:[
-        ["invernaderos-miel","Recoger miel","Miel de invernaderos"]
+      {id:"invernaderos",name:"Invernaderos",tasks:[
+        {id:"invernaderos-miel",name:"Recoger miel"}
       ]},
-      { name:"Ventas", tasks:[
-        ["venta-lana","Lana de ovejas","Lana de ovejas"],
-        ["venta-virutas","Virutas de HOF o bosques","Virutas de HOF o bosques"],
-        ["venta-miel","Miel de invernaderos","Miel de invernaderos"],
-        ["venta-remolacha-cortada","Remolacha cortada de fábrica","Remolacha cortada"]
+      {id:"ventas",name:"Ventas",tasks:[
+        {id:"venta-lana",name:"Lana de ovejas"},
+        {id:"venta-virutas",name:"Virutas de HOF o bosques"},
+        {id:"venta-miel",name:"Miel de invernaderos"},
+        {id:"venta-remolacha-cortada",name:"Remolacha cortada de fábrica"}
       ]}
     ];
+
+    let catalog = [];
+    let dailyState = {};
+    let generalTasks = [];
+    let editing = false;
+    let draftCatalog = null;
 
     const factoryView = document.getElementById("factoryView");
     const productView = document.getElementById("productView");
     const factoryViewBtn = document.getElementById("factoryViewBtn");
     const productViewBtn = document.getElementById("productViewBtn");
+    const newFactoryBtn = document.getElementById("newFactoryBtn");
+    const editBtn = document.getElementById("editBtn");
+    const resetBtn = document.getElementById("resetBtn");
     const counter = document.getElementById("counter");
     const allDone = document.getElementById("allDone");
-    const resetBtn = document.getElementById("resetBtn");
-    const notes = document.getElementById("notes");
-    const clearNotesBtn = document.getElementById("clearNotesBtn");
 
-    const taskMeta = {};
-    groups.forEach(group => {
-      group.tasks.forEach(([id,label,product]) => {
-        taskMeta[id] = { id, label, product, group:group.name };
+    const generalTaskInput = document.getElementById("generalTaskInput");
+    const addGeneralTaskBtn = document.getElementById("addGeneralTaskBtn");
+    const generalList = document.getElementById("generalList");
+    const generalEmpty = document.getElementById("generalEmpty");
+
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalFields = document.getElementById("modalFields");
+    const modalCancelBtn = document.getElementById("modalCancelBtn");
+    const modalSaveBtn = document.getElementById("modalSaveBtn");
+
+    function clone(v){return JSON.parse(JSON.stringify(v))}
+    function uid(prefix){
+      return prefix+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
+    }
+
+    function readJSON(key,fallback){
+      try{
+        const raw=localStorage.getItem(key);
+        return raw?JSON.parse(raw):fallback;
+      }catch(e){return fallback}
+    }
+
+    function saveCatalog(){localStorage.setItem(CATALOG_KEY,JSON.stringify(catalog))}
+    function saveDaily(){localStorage.setItem(DAILY_KEY,JSON.stringify(dailyState))}
+    function saveGeneral(){localStorage.setItem(GENERAL_KEY,JSON.stringify(generalTasks))}
+
+    function ensureDailyKeys(){
+      catalog.forEach(factory=>{
+        factory.tasks.forEach(task=>{
+          if(typeof dailyState[task.id]!=="boolean") dailyState[task.id]=false;
+        });
       });
-    });
-
-    function readState(){
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
-      catch(e) { return {}; }
     }
 
-    function writeState(state){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    function migrateV22(){
+      if(localStorage.getItem(MIGRATION_KEY)) return;
+
+      const oldDaily=readJSON("fs25-checklist-v22",null);
+      if(oldDaily && typeof oldDaily==="object"){
+        Object.keys(oldDaily).forEach(id=>{
+          dailyState[id]=Boolean(oldDaily[id]);
+        });
+      }
+
+      const oldNotes=localStorage.getItem("fs25-checklist-notes-v22");
+      if(oldNotes && generalTasks.length===0){
+        const lines=oldNotes
+          .split("\n")
+          .map(line=>line.replace(/^\s*•\s?/,"").trim())
+          .filter(Boolean);
+
+        generalTasks=lines.map(text=>({
+          id:uid("general"),
+          text,
+          done:false
+        }));
+      }
+
+      localStorage.setItem(MIGRATION_KEY,"1");
+      saveDaily();
+      saveGeneral();
     }
 
-    function taskRow(id, text){
-      const label = document.createElement("label");
-      label.className = "task";
-      label.dataset.taskId = id;
+    function loadData(){
+      catalog=readJSON(CATALOG_KEY,clone(initialCatalog));
+      dailyState=readJSON(DAILY_KEY,{});
+      generalTasks=readJSON(GENERAL_KEY,[]);
 
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.dataset.id = id;
+      if(!Array.isArray(catalog) || catalog.length===0) catalog=clone(initialCatalog);
+      if(!Array.isArray(generalTasks)) generalTasks=[];
 
-      const checkmark = document.createElement("span");
-      checkmark.className = "checkmark";
+      migrateV22();
+      ensureDailyKeys();
 
-      const taskText = document.createElement("span");
-      taskText.className = "task-text";
-      taskText.textContent = text;
-
-      label.append(input, checkmark, taskText);
-      return label;
+      saveCatalog();
+      saveDaily();
     }
 
-    function sectionTitleRow(titleText, sectionKey){
-      const row = document.createElement("div");
-      row.className = "section-title-row";
+    function factoryComplete(factory){
+      return factory.tasks.length>0 && factory.tasks.every(task=>Boolean(dailyState[task.id]));
+    }
 
-      const title = document.createElement("div");
-      title.className = "section-title";
-      title.textContent = titleText;
+    function factoryPending(factory){
+      return factory.tasks.filter(task=>!dailyState[task.id]).length;
+    }
 
-      const count = document.createElement("div");
-      count.className = "section-count";
-      count.dataset.sectionKey = sectionKey;
+    function totalPending(){
+      return catalog.reduce((acc,factory)=>acc+factoryPending(factory),0);
+    }
 
-      row.append(title, count);
+    function productName(taskName){
+      let name=taskName.trim();
+      name=name.replace(/^Recoger\s+/i,"");
+      return name || taskName;
+    }
+
+    function renderGeneral(){
+      generalList.innerHTML="";
+      const pending=generalTasks.filter(t=>!t.done);
+      const done=generalTasks.filter(t=>t.done);
+
+      generalEmpty.style.display=generalTasks.length?"none":"block";
+
+      pending.forEach(task=>generalList.appendChild(makeGeneralRow(task)));
+
+      if(done.length){
+        const divider=document.createElement("div");
+        divider.className="completed-divider";
+        divider.textContent="Completadas";
+        generalList.appendChild(divider);
+
+        done.forEach(task=>generalList.appendChild(makeGeneralRow(task)));
+      }
+    }
+
+    function makeGeneralRow(task){
+      const wrap=document.createElement("div");
+      wrap.className="swipe-wrap";
+      wrap.dataset.id=task.id;
+
+      const swipeDelete=document.createElement("div");
+      swipeDelete.className="swipe-delete";
+      swipeDelete.textContent="Eliminar";
+      swipeDelete.addEventListener("click",()=>deleteGeneral(task.id));
+
+      const row=document.createElement("div");
+      row.className="task general-row"+(task.done?" done":"");
+
+      const label=document.createElement("label");
+      label.className="task-label";
+
+      const input=document.createElement("input");
+      input.type="checkbox";
+      input.checked=task.done;
+
+      const checkmark=document.createElement("span");
+      checkmark.className="checkmark";
+
+      const text=document.createElement("span");
+      text.className="task-text";
+      text.textContent=task.text;
+
+      input.addEventListener("change",()=>{
+        const item=generalTasks.find(t=>t.id===task.id);
+        if(!item) return;
+        item.done=input.checked;
+        saveGeneral();
+        renderGeneral();
+      });
+
+      label.append(input,checkmark,text);
+      row.appendChild(label);
+
+      if(task.done){
+        const deleteBtn=document.createElement("button");
+        deleteBtn.className="general-delete";
+        deleteBtn.type="button";
+        deleteBtn.textContent="Eliminar";
+        deleteBtn.addEventListener("click",()=>deleteGeneral(task.id));
+        row.appendChild(deleteBtn);
+        bindSwipe(row);
+      }
+
+      wrap.append(swipeDelete,row);
+      return wrap;
+    }
+
+    function bindSwipe(row){
+      let startX=0,startY=0,tracking=false;
+
+      row.addEventListener("touchstart",e=>{
+        if(!e.touches || e.touches.length!==1) return;
+        startX=e.touches[0].clientX;
+        startY=e.touches[0].clientY;
+        tracking=true;
+      },{passive:true});
+
+      row.addEventListener("touchmove",e=>{
+        if(!tracking || !e.touches || e.touches.length!==1) return;
+        const dx=e.touches[0].clientX-startX;
+        const dy=e.touches[0].clientY-startY;
+        if(Math.abs(dy)>Math.abs(dx)) return;
+
+        if(dx<-28) row.classList.add("revealed");
+        if(dx>20) row.classList.remove("revealed");
+      },{passive:true});
+
+      row.addEventListener("touchend",()=>tracking=false,{passive:true});
+      row.addEventListener("touchcancel",()=>tracking=false,{passive:true});
+    }
+
+    function deleteGeneral(id){
+      const task=generalTasks.find(t=>t.id===id);
+      if(!task || !task.done) return;
+      generalTasks=generalTasks.filter(t=>t.id!==id);
+      saveGeneral();
+      renderGeneral();
+    }
+
+    function addGeneral(){
+      const text=generalTaskInput.value.trim();
+      if(!text) return;
+
+      generalTasks.push({
+        id:uid("general"),
+        text,
+        done:false
+      });
+
+      generalTaskInput.value="";
+      saveGeneral();
+      renderGeneral();
+    }
+
+    function makeCheckTask(task,factoryName){
+      const row=document.createElement("div");
+      row.className="task"+(dailyState[task.id]?" done":"");
+
+      const label=document.createElement("label");
+      label.className="task-label";
+
+      const input=document.createElement("input");
+      input.type="checkbox";
+      input.checked=Boolean(dailyState[task.id]);
+
+      const checkmark=document.createElement("span");
+      checkmark.className="checkmark";
+
+      const text=document.createElement("span");
+      text.className="task-text";
+      text.textContent=factoryName || task.name;
+
+      input.addEventListener("change",()=>{
+        dailyState[task.id]=input.checked;
+        saveDaily();
+        renderAll();
+      });
+
+      label.append(input,checkmark,text);
+      row.appendChild(label);
       return row;
     }
 
     function renderFactoryView(){
-      factoryView.innerHTML = "";
+      factoryView.innerHTML="";
 
-      groups.forEach(group => {
-        const section = document.createElement("section");
-        section.className = "section";
-        section.dataset.sectionType = "factory";
-        section.dataset.sectionKey = group.name;
+      if(editing){
+        renderEditFactoryView();
+        return;
+      }
 
-        section.appendChild(sectionTitleRow(group.name, group.name));
-        group.tasks.forEach(([id,label]) => section.appendChild(taskRow(id,label)));
+      const pendingFactories=catalog.filter(f=>!factoryComplete(f));
+      const completedFactories=catalog.filter(f=>factoryComplete(f));
 
-        factoryView.appendChild(section);
+      if(pendingFactories.length){
+        const label=document.createElement("div");
+        label.className="group-label";
+        label.textContent="Pendientes";
+        factoryView.appendChild(label);
+
+        pendingFactories.forEach(factory=>{
+          factoryView.appendChild(makeFactoryCard(factory,false));
+        });
+      }
+
+      if(completedFactories.length){
+        const label=document.createElement("div");
+        label.className="group-label";
+        label.textContent="Completadas";
+        factoryView.appendChild(label);
+
+        completedFactories.forEach(factory=>{
+          factoryView.appendChild(makeFactoryCard(factory,true));
+        });
+      }
+
+      if(catalog.length===0){
+        const empty=document.createElement("div");
+        empty.className="empty";
+        empty.textContent="Todavía no hay fábricas.";
+        factoryView.appendChild(empty);
+      }
+    }
+
+    function makeFactoryCard(factory,completed){
+      const card=document.createElement("section");
+      card.className="factory-card"+(completed?" completed":"");
+
+      const head=document.createElement("div");
+      head.className="factory-head";
+
+      const titleWrap=document.createElement("div");
+      titleWrap.className="factory-title-wrap";
+
+      const title=document.createElement("div");
+      title.className="factory-title";
+      title.textContent=factory.name;
+
+      const sub=document.createElement("div");
+      sub.className="factory-sub";
+      sub.textContent=factory.tasks.length===1?"1 tarea":`${factory.tasks.length} tareas`;
+
+      titleWrap.append(title,sub);
+      head.appendChild(titleWrap);
+
+      const pending=document.createElement("div");
+      pending.className="pending-badge";
+      const count=factoryPending(factory);
+      pending.textContent=completed?"✓":(count===1?"1 pendiente":`${count} pendientes`);
+      head.appendChild(pending);
+
+      card.appendChild(head);
+
+      const tasks=[...factory.tasks].sort((a,b)=>{
+        const ad=Boolean(dailyState[a.id]);
+        const bd=Boolean(dailyState[b.id]);
+        return Number(ad)-Number(bd);
       });
+
+      tasks.forEach(task=>card.appendChild(makeCheckTask(task)));
+      return card;
+    }
+
+    function renderEditFactoryView(){
+      const label=document.createElement("div");
+      label.className="group-label";
+      label.textContent="Editar fábricas";
+      factoryView.appendChild(label);
+
+      draftCatalog.forEach((factory,index)=>{
+        const card=document.createElement("section");
+        card.className="factory-card";
+
+        const head=document.createElement("div");
+        head.className="factory-head";
+
+        const titleWrap=document.createElement("div");
+        titleWrap.className="factory-title-wrap";
+
+        const factoryInput=document.createElement("input");
+        factoryInput.className="edit-input factory-name-input";
+        factoryInput.value=factory.name;
+        factoryInput.dataset.factoryId=factory.id;
+
+        titleWrap.appendChild(factoryInput);
+        head.appendChild(titleWrap);
+
+        const actions=document.createElement("div");
+        actions.className="edit-factory-actions";
+
+        const up=document.createElement("button");
+        up.type="button";
+        up.className="move-btn";
+        up.textContent="↑";
+        up.disabled=index===0;
+        up.addEventListener("click",()=>{
+          syncDraftNamesFromDOM();
+          moveFactory(index,index-1);
+        });
+
+        const down=document.createElement("button");
+        down.type="button";
+        down.className="move-btn";
+        down.textContent="↓";
+        down.disabled=index===draftCatalog.length-1;
+        down.addEventListener("click",()=>{
+          syncDraftNamesFromDOM();
+          moveFactory(index,index+1);
+        });
+
+        actions.append(up,down);
+        head.appendChild(actions);
+        card.appendChild(head);
+
+        factory.tasks.forEach(task=>{
+          const row=document.createElement("div");
+          row.className="task";
+
+          const input=document.createElement("input");
+          input.className="edit-input task-name-input";
+          input.value=task.name;
+          input.dataset.factoryId=factory.id;
+          input.dataset.taskId=task.id;
+
+          row.appendChild(input);
+          card.appendChild(row);
+        });
+
+        const addRow=document.createElement("div");
+        addRow.className="add-input-row";
+
+        const addBtn=document.createElement("button");
+        addBtn.type="button";
+        addBtn.className="add-input-btn";
+        addBtn.textContent="＋ Añadir input";
+        addBtn.addEventListener("click",()=>{
+          syncDraftNamesFromDOM();
+          openAddInput(factory.id);
+        });
+
+        addRow.appendChild(addBtn);
+        card.appendChild(addRow);
+
+        factoryView.appendChild(card);
+      });
+    }
+
+    function syncDraftNamesFromDOM(){
+      if(!editing || !draftCatalog) return;
+
+      document.querySelectorAll(".factory-name-input").forEach(input=>{
+        const factory=draftCatalog.find(f=>f.id===input.dataset.factoryId);
+        if(factory && input.value.trim()) factory.name=input.value.trim();
+      });
+
+      document.querySelectorAll(".task-name-input").forEach(input=>{
+        const factory=draftCatalog.find(f=>f.id===input.dataset.factoryId);
+        const task=factory?.tasks.find(t=>t.id===input.dataset.taskId);
+        if(task && input.value.trim()) task.name=input.value.trim();
+      });
+    }
+
+    function moveFactory(from,to){
+      if(to<0 || to>=draftCatalog.length) return;
+      const [item]=draftCatalog.splice(from,1);
+      draftCatalog.splice(to,0,item);
+      renderFactoryView();
     }
 
     function renderProductView(){
-      productView.innerHTML = "";
-      const byProduct = {};
+      productView.innerHTML="";
+      const products={};
 
-      Object.values(taskMeta).forEach(task => {
-        if(!byProduct[task.product]) byProduct[task.product] = [];
-        byProduct[task.product].push(task);
-      });
-
-      Object.keys(byProduct)
-        .sort((a,b) => a.localeCompare(b,"es",{sensitivity:"base"}))
-        .forEach(product => {
-          const section = document.createElement("section");
-          section.className = "section";
-          section.dataset.sectionType = "product";
-          section.dataset.sectionKey = product;
-
-          section.appendChild(sectionTitleRow(product, product));
-          byProduct[product].forEach(task => section.appendChild(taskRow(task.id, task.group)));
-
-          productView.appendChild(section);
+      catalog.forEach(factory=>{
+        factory.tasks.forEach(task=>{
+          const product=productName(task.name);
+          if(!products[product]) products[product]=[];
+          products[product].push({factory,task});
         });
-    }
-
-    function sortTasksWithinSection(section, state){
-      const rows = [...section.querySelectorAll(".task")];
-      rows.sort((a,b) => {
-        const aDone = Boolean(state[a.dataset.taskId]);
-        const bDone = Boolean(state[b.dataset.taskId]);
-        if(aDone === bDone) return 0;
-        return aDone ? 1 : -1;
       });
-      rows.forEach(row => section.appendChild(row));
+
+      const keys=Object.keys(products).sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+
+      if(keys.length===0){
+        const empty=document.createElement("div");
+        empty.className="empty";
+        empty.textContent="Todavía no hay productos.";
+        productView.appendChild(empty);
+        return;
+      }
+
+      keys.forEach(product=>{
+        const card=document.createElement("section");
+        card.className="product-card";
+
+        const head=document.createElement("div");
+        head.className="product-head";
+        head.textContent=product;
+        card.appendChild(head);
+
+        const items=products[product].sort((a,b)=>{
+          const ad=Boolean(dailyState[a.task.id]);
+          const bd=Boolean(dailyState[b.task.id]);
+          if(ad!==bd) return ad?1:-1;
+          return a.factory.name.localeCompare(b.factory.name,"es",{sensitivity:"base"});
+        });
+
+        items.forEach(({factory,task})=>{
+          card.appendChild(makeCheckTask(task,factory.name));
+        });
+
+        productView.appendChild(card);
+      });
     }
 
-    function updateSectionCounts(state){
-      document.querySelectorAll(".section").forEach(section => {
-        const ids = [...section.querySelectorAll(".task")].map(row => row.dataset.taskId);
-        const pending = ids.filter(id => !state[id]).length;
-        const countEl = section.querySelector(".section-count");
+    function updateCounter(){
+      const pending=totalPending();
+      counter.textContent=pending===1?"1 pendiente":`${pending} pendientes`;
+      allDone.classList.toggle("visible",catalog.length>0 && pending===0);
+    }
 
-        if(pending === 0){
-          countEl.textContent = "✓";
-          countEl.classList.add("done");
-        }else{
-          countEl.textContent = pending === 1 ? "1 pendiente" : `${pending} pendientes`;
-          countEl.classList.remove("done");
+    function renderAll(){
+      renderGeneral();
+      renderFactoryView();
+      renderProductView();
+      updateCounter();
+    }
+
+    function setView(view,save=true){
+      const factory=view!=="product";
+
+      factoryView.classList.toggle("active",factory);
+      productView.classList.toggle("active",!factory);
+      factoryViewBtn.classList.toggle("active",factory);
+      productViewBtn.classList.toggle("active",!factory);
+
+      newFactoryBtn.style.display=factory?"inline-flex":"none";
+      editBtn.style.display=factory?"inline-flex":"none";
+
+      if(save) localStorage.setItem(VIEW_KEY,factory?"factory":"product");
+    }
+
+    function beginEdit(){
+      editing=true;
+      draftCatalog=clone(catalog);
+      document.body.classList.add("editing");
+      editBtn.textContent="Guardar";
+      editBtn.classList.remove("secondary");
+      editBtn.classList.add("sage");
+      renderFactoryView();
+    }
+
+    function saveEdit(){
+      syncDraftNamesFromDOM();
+
+      catalog=clone(draftCatalog);
+      editing=false;
+      draftCatalog=null;
+
+      document.body.classList.remove("editing");
+      editBtn.textContent="Editar";
+      editBtn.classList.remove("sage");
+      editBtn.classList.add("secondary");
+
+      ensureDailyKeys();
+      saveCatalog();
+      saveDaily();
+      renderAll();
+    }
+
+    function openModal(title,fields,onSave){
+      modalTitle.textContent=title;
+      modalFields.innerHTML="";
+
+      fields.forEach(field=>{
+        const label=document.createElement("label");
+        label.textContent=field.label;
+
+        const input=document.createElement("input");
+        input.type="text";
+        input.id=field.id;
+        input.placeholder=field.placeholder || "";
+        input.value=field.value || "";
+
+        modalFields.append(label,input);
+      });
+
+      modalSaveBtn.onclick=onSave;
+      modalBackdrop.classList.add("open");
+
+      setTimeout(()=>{
+        const first=modalFields.querySelector("input");
+        if(first) first.focus();
+      },50);
+    }
+
+    function closeModal(){
+      modalBackdrop.classList.remove("open");
+      modalSaveBtn.onclick=null;
+    }
+
+    function openNewFactory(){
+      if(editing) syncDraftNamesFromDOM();
+
+      openModal("Nueva fábrica",[
+        {id:"newFactoryName",label:"Nombre de la fábrica",placeholder:"Ej. Cervecería"},
+        {id:"newFactoryTask",label:"Primer input (opcional)",placeholder:"Ej. Cebada"}
+      ],()=>{
+        const name=document.getElementById("newFactoryName").value.trim();
+        const firstTask=document.getElementById("newFactoryTask").value.trim();
+        if(!name) return;
+
+        const target=editing?draftCatalog:catalog;
+
+        const factory={
+          id:uid("factory"),
+          name,
+          tasks:[]
+        };
+
+        if(firstTask){
+          const taskId=uid("task");
+          factory.tasks.push({id:taskId,name:firstTask});
+          dailyState[taskId]=false;
         }
+
+        target.push(factory);
+
+        if(!editing){
+          catalog=target;
+          saveCatalog();
+          ensureDailyKeys();
+          saveDaily();
+          renderAll();
+        }else{
+          saveDaily();
+          renderFactoryView();
+        }
+
+        closeModal();
       });
     }
 
-    function syncUI(){
-      const state = readState();
+    function openAddInput(factoryId){
+      const factory=draftCatalog.find(f=>f.id===factoryId);
+      if(!factory) return;
 
-      document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
-        cb.checked = Boolean(state[cb.dataset.id]);
-        cb.closest(".task").classList.toggle("done", cb.checked);
+      openModal(`Añadir input · ${factory.name}`,[
+        {id:"newInputName",label:"Nombre del input / tarea",placeholder:"Ej. Diésel"}
+      ],()=>{
+        const name=document.getElementById("newInputName").value.trim();
+        if(!name) return;
+
+        const taskId=uid("task");
+        factory.tasks.push({id:taskId,name});
+        dailyState[taskId]=false;
+        saveDaily();
+
+        closeModal();
+        renderFactoryView();
       });
-
-      document.querySelectorAll(".section").forEach(section => sortTasksWithinSection(section, state));
-      updateSectionCounts(state);
-
-      const ids = Object.keys(taskMeta);
-      const done = ids.filter(id => Boolean(state[id])).length;
-      const pending = ids.length - done;
-
-      counter.textContent = pending === 1 ? "1 pendiente" : `${pending} pendientes`;
-      allDone.classList.toggle("visible", pending === 0);
     }
 
-    function bindCheckboxes(){
-      document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
-        cb.addEventListener("change", () => {
-          const state = readState();
-          state[cb.dataset.id] = cb.checked;
-          writeState(state);
-          syncUI();
+    addGeneralTaskBtn.addEventListener("click",addGeneral);
+    generalTaskInput.addEventListener("keydown",e=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        addGeneral();
+      }
+    });
+
+    factoryViewBtn.addEventListener("click",()=>{
+      if(editing) saveEdit();
+      setView("factory");
+    });
+
+    productViewBtn.addEventListener("click",()=>{
+      if(editing) saveEdit();
+      setView("product");
+    });
+
+    newFactoryBtn.addEventListener("click",openNewFactory);
+
+    editBtn.addEventListener("click",()=>{
+      if(editing) saveEdit();
+      else beginEdit();
+    });
+
+    resetBtn.addEventListener("click",()=>{
+      if(editing) saveEdit();
+
+      if(!confirm("¿Empezar un nuevo día y desmarcar todas las tareas de fábricas?")) return;
+
+      catalog.forEach(factory=>{
+        factory.tasks.forEach(task=>{
+          dailyState[task.id]=false;
         });
       });
-    }
 
-    function setView(view){
-      const factory = view !== "product";
-      factoryView.classList.toggle("active", factory);
-      productView.classList.toggle("active", !factory);
-      factoryViewBtn.classList.toggle("active", factory);
-      productViewBtn.classList.toggle("active", !factory);
-      localStorage.setItem(VIEW_KEY, factory ? "factory" : "product");
-    }
-
-    function autoResizeNotes(){
-      notes.style.height = "auto";
-      notes.style.height = notes.scrollHeight + "px";
-    }
-
-    function normalizeBullets(value){
-      const lines = value.split("\n");
-      return lines.map(line => {
-        const trimmed = line.replace(/^\s*•\s?/, "");
-        return trimmed.length ? "• " + trimmed : "• ";
-      }).join("\n");
-    }
-
-    notes.value = localStorage.getItem(NOTES_KEY) || "";
-    if(notes.value && !notes.value.trim().startsWith("•")){
-      notes.value = normalizeBullets(notes.value);
-    }
-    autoResizeNotes();
-
-    notes.addEventListener("focus", () => {
-      if(!notes.value.trim()){
-        notes.value = "• ";
-        localStorage.setItem(NOTES_KEY, notes.value);
-        autoResizeNotes();
-        requestAnimationFrame(() => notes.setSelectionRange(notes.value.length, notes.value.length));
-      }
-    });
-
-    notes.addEventListener("keydown", event => {
-      if(event.key === "Enter"){
-        event.preventDefault();
-        const start = notes.selectionStart;
-        const end = notes.selectionEnd;
-        const before = notes.value.slice(0,start);
-        const after = notes.value.slice(end);
-        const insert = "\n• ";
-        notes.value = before + insert + after;
-        const pos = start + insert.length;
-        notes.setSelectionRange(pos,pos);
-        localStorage.setItem(NOTES_KEY, notes.value);
-        autoResizeNotes();
-      }
-    });
-
-    notes.addEventListener("input", () => {
-      localStorage.setItem(NOTES_KEY, notes.value);
-      autoResizeNotes();
-    });
-
-    clearNotesBtn.addEventListener("click", () => {
-      if(!notes.value.trim()) return;
-      if(!confirm("¿Vaciar todas las notas?")) return;
-      notes.value = "";
-      localStorage.removeItem(NOTES_KEY);
-      autoResizeNotes();
-      notes.focus();
-    });
-
-    factoryViewBtn.addEventListener("click", () => setView("factory"));
-    productViewBtn.addEventListener("click", () => setView("product"));
-
-    resetBtn.addEventListener("click", () => {
-      if(!confirm("¿Empezar un nuevo día y desmarcar todas las tareas?")) return;
-
-      const blank = {};
-      Object.keys(taskMeta).forEach(id => blank[id] = false);
-      writeState(blank);
-      syncUI();
+      saveDaily();
+      renderAll();
       window.scrollTo({top:0,behavior:"smooth"});
     });
 
-    renderFactoryView();
-    renderProductView();
-    bindCheckboxes();
-    syncUI();
-    setView(localStorage.getItem(VIEW_KEY) || "factory");
+    modalCancelBtn.addEventListener("click",closeModal);
+    modalBackdrop.addEventListener("click",e=>{
+      if(e.target===modalBackdrop) closeModal();
+    });
+
+    loadData();
+    renderAll();
+    setView(localStorage.getItem(VIEW_KEY)||"factory",false);
 
     if("serviceWorker" in navigator){
-      window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js"));
+      window.addEventListener("load",()=>{
+        navigator.serviceWorker.register("./service-worker.js");
+      });
     }
   </script>
 </body>
