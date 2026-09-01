@@ -37,7 +37,7 @@
       min-height:100vh;
       padding:max(16px,env(safe-area-inset-top))
               max(14px,env(safe-area-inset-right))
-              max(28px,env(safe-area-inset-bottom))
+              max(96px,env(safe-area-inset-bottom))
               max(14px,env(safe-area-inset-left));
     }
 
@@ -193,6 +193,18 @@
       align-items:center;
     }
 
+    body.editing #editBtn{
+      position:fixed;
+      right:max(16px,env(safe-area-inset-right));
+      bottom:max(16px,env(safe-area-inset-bottom));
+      z-index:90;
+      min-width:110px;
+      min-height:52px;
+      box-shadow:0 10px 28px rgba(0,0,0,.22);
+      background:var(--sage);
+      color:#fff;
+    }
+
     .view{display:none}
     .view.active{display:block}
 
@@ -204,6 +216,42 @@
       text-transform:uppercase;
       letter-spacing:.08em;
     }
+
+    .completed-toggle{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:20px 0 10px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:#e9e9ec;
+      color:var(--text);
+      min-height:46px;
+    }
+
+    .completed-toggle-left{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      font-size:14px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .chevron{
+      display:inline-block;
+      transition:transform .18s ease;
+      font-size:16px;
+      line-height:1;
+    }
+
+    .completed-toggle.open .chevron{transform:rotate(90deg)}
+    .completed-count{color:var(--muted);font-size:13px;font-weight:800}
+    .completed-list{display:none}
+    .completed-list.open{display:block}
 
     .factory-card{
       background:var(--card);
@@ -262,6 +310,29 @@
       font-size:13px;
       font-weight:800;
       white-space:nowrap;
+    }
+
+    .factory-head-actions{display:flex;align-items:center;gap:8px}
+
+    .complete-factory-btn{
+      width:40px;
+      height:40px;
+      min-width:40px;
+      min-height:40px;
+      padding:0;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:var(--sage);
+      color:#fff;
+      font-size:20px;
+      font-weight:900;
+      box-shadow:0 1px 5px rgba(0,0,0,.08);
+    }
+
+    .factory-card.completed .complete-factory-btn{
+      background:rgba(255,255,255,.18);
+      color:#fff;
     }
 
     .task{
@@ -448,25 +519,32 @@
     }
 
     .edit-input{
-      font-weight:700;
+      font-weight:600;
       min-height:40px;
       padding:7px 9px;
     }
 
-    .edit-factory-actions{
-      display:flex;
-      gap:6px;
-      flex:0 0 auto;
+    .factory-name-input{
+      border:2px solid var(--sage);
+      background:#eef0ec;
+      font-weight:850;
+      color:var(--text);
     }
 
-    .move-btn{
-      min-width:38px;
-      min-height:38px;
-      padding:0;
-      border-radius:10px;
-      background:#efeff2;
-      color:var(--text);
-      font-size:18px;
+    .factory-edit-label{
+      display:block;
+      margin-bottom:5px;
+      color:var(--sage);
+      font-size:11px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .task-name-input{
+      border:1px solid var(--line);
+      background:#fff;
+      font-weight:600;
     }
 
     .add-input-row{
@@ -687,6 +765,7 @@
     let generalTasks = [];
     let editing = false;
     let draftCatalog = null;
+    let completedExpanded = false;
 
     const factoryView = document.getElementById("factoryView");
     const productView = document.getElementById("productView");
@@ -724,6 +803,18 @@
     function saveCatalog(){localStorage.setItem(CATALOG_KEY,JSON.stringify(catalog))}
     function saveDaily(){localStorage.setItem(DAILY_KEY,JSON.stringify(dailyState))}
     function saveGeneral(){localStorage.setItem(GENERAL_KEY,JSON.stringify(generalTasks))}
+
+    function alphaCompare(a,b){
+      return a.localeCompare(b,"es",{sensitivity:"base",numeric:true});
+    }
+
+    function sortCatalog(target){
+      target.sort((a,b)=>alphaCompare(a.name,b.name));
+      target.forEach(factory=>{
+        factory.tasks.sort((a,b)=>alphaCompare(a.name,b.name));
+      });
+      return target;
+    }
 
     function ensureDailyKeys(){
       catalog.forEach(factory=>{
@@ -771,6 +862,7 @@
       if(!Array.isArray(generalTasks)) generalTasks=[];
 
       migrateV22();
+      sortCatalog(catalog);
       ensureDailyKeys();
 
       saveCatalog();
@@ -807,7 +899,7 @@
       if(done.length){
         const divider=document.createElement("div");
         divider.className="completed-divider";
-        divider.textContent="Completadas";
+        divider.textContent="Hechas";
         generalList.appendChild(divider);
 
         done.forEach(task=>generalList.appendChild(makeGeneralRow(task)));
@@ -891,8 +983,6 @@
     }
 
     function deleteGeneral(id){
-      const task=generalTasks.find(t=>t.id===id);
-      if(!task || !task.done) return;
       generalTasks=generalTasks.filter(t=>t.id!==id);
       saveGeneral();
       renderGeneral();
@@ -942,6 +1032,18 @@
       return row;
     }
 
+    function markFactoryComplete(factoryId){
+      const factory=catalog.find(f=>f.id===factoryId);
+      if(!factory) return;
+
+      factory.tasks.forEach(task=>{
+        dailyState[task.id]=true;
+      });
+
+      saveDaily();
+      renderAll();
+    }
+
     function renderFactoryView(){
       factoryView.innerHTML="";
 
@@ -965,14 +1067,41 @@
       }
 
       if(completedFactories.length){
-        const label=document.createElement("div");
-        label.className="group-label";
-        label.textContent="Completadas";
-        factoryView.appendChild(label);
+        const toggle=document.createElement("button");
+        toggle.type="button";
+        toggle.className="completed-toggle"+(completedExpanded?" open":"");
+
+        const left=document.createElement("div");
+        left.className="completed-toggle-left";
+
+        const chevron=document.createElement("span");
+        chevron.className="chevron";
+        chevron.textContent="›";
+
+        const title=document.createElement("span");
+        title.textContent="Completadas";
+
+        left.append(chevron,title);
+
+        const count=document.createElement("span");
+        count.className="completed-count";
+        count.textContent=completedFactories.length;
+
+        toggle.append(left,count);
+
+        const list=document.createElement("div");
+        list.className="completed-list"+(completedExpanded?" open":"");
 
         completedFactories.forEach(factory=>{
-          factoryView.appendChild(makeFactoryCard(factory,true));
+          list.appendChild(makeFactoryCard(factory,true));
         });
+
+        toggle.addEventListener("click",()=>{
+          completedExpanded=!completedExpanded;
+          renderFactoryView();
+        });
+
+        factoryView.append(toggle,list);
       }
 
       if(catalog.length===0){
@@ -1004,18 +1133,31 @@
       titleWrap.append(title,sub);
       head.appendChild(titleWrap);
 
+      const actions=document.createElement("div");
+      actions.className="factory-head-actions";
+
       const pending=document.createElement("div");
       pending.className="pending-badge";
       const count=factoryPending(factory);
       pending.textContent=completed?"✓":(count===1?"1 pendiente":`${count} pendientes`);
-      head.appendChild(pending);
 
+      const completeBtn=document.createElement("button");
+      completeBtn.className="complete-factory-btn";
+      completeBtn.type="button";
+      completeBtn.textContent="✓";
+      completeBtn.setAttribute("aria-label",`Marcar todos los inputs de ${factory.name} como completados`);
+      completeBtn.title="Marcar fábrica como completada";
+      completeBtn.addEventListener("click",()=>markFactoryComplete(factory.id));
+
+      actions.append(pending,completeBtn);
+      head.appendChild(actions);
       card.appendChild(head);
 
       const tasks=[...factory.tasks].sort((a,b)=>{
         const ad=Boolean(dailyState[a.id]);
         const bd=Boolean(dailyState[b.id]);
-        return Number(ad)-Number(bd);
+        if(ad!==bd) return ad?1:-1;
+        return alphaCompare(a.name,b.name);
       });
 
       tasks.forEach(task=>card.appendChild(makeCheckTask(task)));
@@ -1028,7 +1170,9 @@
       label.textContent="Editar fábricas";
       factoryView.appendChild(label);
 
-      draftCatalog.forEach((factory,index)=>{
+      sortCatalog(draftCatalog);
+
+      draftCatalog.forEach(factory=>{
         const card=document.createElement("section");
         card.className="factory-card";
 
@@ -1038,54 +1182,34 @@
         const titleWrap=document.createElement("div");
         titleWrap.className="factory-title-wrap";
 
+        const factoryLabel=document.createElement("span");
+        factoryLabel.className="factory-edit-label";
+        factoryLabel.textContent="Fábrica";
+
         const factoryInput=document.createElement("input");
         factoryInput.className="edit-input factory-name-input";
         factoryInput.value=factory.name;
         factoryInput.dataset.factoryId=factory.id;
 
-        titleWrap.appendChild(factoryInput);
+        titleWrap.append(factoryLabel,factoryInput);
         head.appendChild(titleWrap);
-
-        const actions=document.createElement("div");
-        actions.className="edit-factory-actions";
-
-        const up=document.createElement("button");
-        up.type="button";
-        up.className="move-btn";
-        up.textContent="↑";
-        up.disabled=index===0;
-        up.addEventListener("click",()=>{
-          syncDraftNamesFromDOM();
-          moveFactory(index,index-1);
-        });
-
-        const down=document.createElement("button");
-        down.type="button";
-        down.className="move-btn";
-        down.textContent="↓";
-        down.disabled=index===draftCatalog.length-1;
-        down.addEventListener("click",()=>{
-          syncDraftNamesFromDOM();
-          moveFactory(index,index+1);
-        });
-
-        actions.append(up,down);
-        head.appendChild(actions);
         card.appendChild(head);
 
-        factory.tasks.forEach(task=>{
-          const row=document.createElement("div");
-          row.className="task";
+        [...factory.tasks]
+          .sort((a,b)=>alphaCompare(a.name,b.name))
+          .forEach(task=>{
+            const row=document.createElement("div");
+            row.className="task";
 
-          const input=document.createElement("input");
-          input.className="edit-input task-name-input";
-          input.value=task.name;
-          input.dataset.factoryId=factory.id;
-          input.dataset.taskId=task.id;
+            const input=document.createElement("input");
+            input.className="edit-input task-name-input";
+            input.value=task.name;
+            input.dataset.factoryId=factory.id;
+            input.dataset.taskId=task.id;
 
-          row.appendChild(input);
-          card.appendChild(row);
-        });
+            row.appendChild(input);
+            card.appendChild(row);
+          });
 
         const addRow=document.createElement("div");
         addRow.className="add-input-row";
@@ -1101,7 +1225,6 @@
 
         addRow.appendChild(addBtn);
         card.appendChild(addRow);
-
         factoryView.appendChild(card);
       });
     }
@@ -1121,12 +1244,6 @@
       });
     }
 
-    function moveFactory(from,to){
-      if(to<0 || to>=draftCatalog.length) return;
-      const [item]=draftCatalog.splice(from,1);
-      draftCatalog.splice(to,0,item);
-      renderFactoryView();
-    }
 
     function renderProductView(){
       productView.innerHTML="";
@@ -1140,7 +1257,7 @@
         });
       });
 
-      const keys=Object.keys(products).sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+      const keys=Object.keys(products).sort((a,b)=>alphaCompare(a,b));
 
       if(keys.length===0){
         const empty=document.createElement("div");
@@ -1163,7 +1280,7 @@
           const ad=Boolean(dailyState[a.task.id]);
           const bd=Boolean(dailyState[b.task.id]);
           if(ad!==bd) return ad?1:-1;
-          return a.factory.name.localeCompare(b.factory.name,"es",{sensitivity:"base"});
+          return alphaCompare(a.factory.name,b.factory.name);
         });
 
         items.forEach(({factory,task})=>{
@@ -1214,6 +1331,7 @@
     function saveEdit(){
       syncDraftNamesFromDOM();
 
+      sortCatalog(draftCatalog);
       catalog=clone(draftCatalog);
       editing=false;
       draftCatalog=null;
@@ -1286,6 +1404,7 @@
         }
 
         target.push(factory);
+        sortCatalog(target);
 
         if(!editing){
           catalog=target;
@@ -1314,6 +1433,7 @@
 
         const taskId=uid("task");
         factory.tasks.push({id:taskId,name});
+        factory.tasks.sort((a,b)=>alphaCompare(a.name,b.name));
         dailyState[taskId]=false;
         saveDaily();
 
@@ -1350,8 +1470,13 @@
     resetBtn.addEventListener("click",()=>{
       if(editing) saveEdit();
 
-      if(!confirm("¿Empezar un nuevo día y desmarcar todas las tareas de fábricas?")) return;
+      if(!confirm("¿Empezar un nuevo día?")) return;
 
+      // Las tareas generales hechas se eliminan. Las pendientes permanecen.
+      generalTasks=generalTasks.filter(task=>!task.done);
+      saveGeneral();
+
+      // Todos los inputs de fábricas vuelven a pendientes.
       catalog.forEach(factory=>{
         factory.tasks.forEach(task=>{
           dailyState[task.id]=false;
@@ -1359,6 +1484,7 @@
       });
 
       saveDaily();
+      completedExpanded=false;
       renderAll();
       window.scrollTo({top:0,behavior:"smooth"});
     });
