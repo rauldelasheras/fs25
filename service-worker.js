@@ -1,4 +1,4 @@
-const CACHE = 'fs25-checklist-v31';
+const CACHE = 'fs25-checklist-v31-footer';
 const STATIC_ASSETS = [
   './manifest.webmanifest',
   './icon-180.png',
