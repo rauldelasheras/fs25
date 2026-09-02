@@ -189,6 +189,7 @@
       position:relative;
       z-index:3;
       transition:transform .18s ease;
+      background:var(--card);
     }
     .dual-swipe-wrap.delete-open > .task,
     .dual-swipe-wrap.delete-open > .edit-swipe-content{
@@ -208,6 +209,16 @@
       color:#fff;
       font-size:14px;
       font-weight:850;
+      opacity:0;
+      pointer-events:none;
+      transform:translateX(100%);
+      transition:opacity .16s ease, transform .18s ease;
+    }
+
+    .dual-swipe-wrap.delete-open .swipe-delete-action{
+      opacity:1;
+      pointer-events:auto;
+      transform:translateX(0);
     }
     .edit-swipe-content{
       position:relative;
@@ -322,7 +333,7 @@
     <input id="importFile" type="file" accept=".json,application/json">
   </section>
 
-  <div class="version-label">V3.2.1</div>
+  <div class="version-label">V3.2.2</div>
 </main>
 
 <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
@@ -925,7 +936,7 @@ function makeBackupObject(){
   return {
     format:"FS25_CHECKLIST_BACKUP",
     schemaVersion:3,
-    appVersion:"3.2.1",
+    appVersion:"3.2.2",
     exportedAt:new Date().toISOString(),
     catalog:clone(catalog),
     generalTasks:clone(generalTasks),

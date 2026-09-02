@@ -1,4 +1,4 @@
-const CACHE = 'fs25-checklist-v321';
+const CACHE = 'fs25-checklist-v322';
 const STATIC_ASSETS = ['./manifest.webmanifest','./icon-180.png','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', event => {
