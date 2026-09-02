@@ -144,7 +144,132 @@
       .status-actions{min-width:104px}
     }
 
-  </style>
+  
+    /* V3.2.1 */
+    body.editing #editBtn{
+      width:auto !important;
+      min-width:116px;
+      right:max(16px,env(safe-area-inset-right));
+      bottom:max(18px,env(safe-area-inset-bottom));
+      z-index:120;
+    }
+
+    .priority{
+      background:#eadfff !important;
+      border-left:4px solid #aa86e8;
+    }
+    .priority .task-text{
+      color:#382b4d !important;
+    }
+    .priority-note{
+      display:block;
+      margin-top:3px;
+      color:#7654aa;
+      font-size:11px;
+      font-weight:850;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    .factory-card.completed .task.priority{
+      background:#eadfff !important;
+    }
+    .factory-card.completed .task.priority .task-text{
+      color:#382b4d !important;
+    }
+
+    .dual-swipe-wrap{
+      position:relative;
+      overflow:hidden;
+      border-top:1px solid var(--line);
+      background:transparent;
+    }
+    .dual-swipe-wrap:first-child{border-top:0}
+    .dual-swipe-wrap > .task{
+      border-top:0;
+      position:relative;
+      z-index:3;
+      transition:transform .18s ease;
+    }
+    .dual-swipe-wrap.delete-open > .task,
+    .dual-swipe-wrap.delete-open > .edit-swipe-content{
+      transform:translateX(-94px);
+    }
+    .swipe-delete-action{
+      position:absolute;
+      right:0;
+      top:0;
+      bottom:0;
+      width:94px;
+      z-index:1;
+      display:grid;
+      place-items:center;
+      border-radius:0;
+      background:var(--danger);
+      color:#fff;
+      font-size:14px;
+      font-weight:850;
+    }
+    .edit-swipe-content{
+      position:relative;
+      z-index:3;
+      background:#fff;
+      transition:transform .18s ease;
+    }
+    .priority-flash{
+      animation:priorityPulse .35s ease;
+    }
+    @keyframes priorityPulse{
+      0%{transform:translateX(0)}
+      45%{transform:translateX(12px)}
+      100%{transform:translateX(0)}
+    }
+
+    .factory-edit-pencil{
+      width:36px;
+      height:36px;
+      min-width:36px;
+      min-height:36px;
+      padding:0;
+      border-radius:11px;
+      display:grid;
+      place-items:center;
+      background:#efeff2;
+      color:var(--text);
+      font-size:17px;
+      line-height:1;
+    }
+
+    .factory-editor-list{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .factory-editor-input-row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      min-height:56px;
+      padding:7px 10px;
+      background:#fff;
+    }
+    .factory-editor-input-row input{
+      margin:0;
+    }
+    .factory-editor-add{
+      width:100%;
+      margin-top:10px;
+      background:#efeff2;
+      color:var(--text);
+    }
+    .factory-editor-hint{
+      margin:8px 2px 0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+    }
+
+</style>
 </head>
 <body>
 <main class="app">
@@ -193,11 +318,11 @@
       <button id="exportBtn" class="sage" type="button">Exportar copia</button>
       <button id="importBtn" class="secondary" type="button">Importar copia</button>
     </div>
-    <div id="backupStatus" class="data-note">La copia incluye fábricas, inputs, tareas generales, reglas automáticas y estado diario.</div>
+    <div id="backupStatus" class="data-note">La copia incluye fábricas, inputs, tareas generales, prioridades, reglas automáticas y estado diario.</div>
     <input id="importFile" type="file" accept=".json,application/json">
   </section>
 
-  <div class="version-label">V3.2</div>
+  <div class="version-label">V3.2.1</div>
 </main>
 
 <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
@@ -219,9 +344,10 @@ const VIEW_KEY="fs25-view-v30";
 const MIGRATION_KEY="fs25-migrated-v30";
 const BACKUP_META_KEY="fs25-backup-meta-v1";
 const AUTO_KEY="fs25-auto-v32";
+const PRIORITY_KEY="fs25-priority-v321";
 const initialCatalog=[{"id": "aserradero", "name": "Aserradero", "tasks": [{"id": "aserradero-madera", "name": "Madera / troncos"}]}, {"id": "azucarera", "name": "Azucarera", "tasks": [{"id": "azucarera-remolacha", "name": "Remolacha"}, {"id": "azucarera-sorgo", "name": "Sorgo"}]}, {"id": "beet-pulp", "name": "Beet Pulp", "tasks": [{"id": "beetpulp-diesel", "name": "Diésel"}, {"id": "beetpulp-remolacha", "name": "Remolacha"}]}, {"id": "bga", "name": "BGA", "tasks": [{"id": "bga-ensilaje", "name": "Ensilaje"}]}, {"id": "fabrica-semillas", "name": "Fábrica de semillas", "tasks": [{"id": "semillas-maiz", "name": "Maíz"}, {"id": "semillas-trigo", "name": "Trigo"}]}, {"id": "fabrica-oil-aceites", "name": "Fábrica Oil Aceites", "tasks": [{"id": "oil-colza", "name": "Colza"}, {"id": "oil-girasol", "name": "Girasol"}, {"id": "oil-maiz", "name": "Maíz"}, {"id": "oil-soja", "name": "Soja"}]}, {"id": "fermentador-pequeno", "name": "Fermentador pequeño", "tasks": [{"id": "fermentador-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "fermenter-stevie", "name": "Fermenter Stevie", "tasks": [{"id": "stevie-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "gallinas", "name": "Gallinas", "tasks": [{"id": "gallinas-huevos", "name": "Recoger huevos"}, {"id": "gallinas-cereal", "name": "Trigo, cebada o sorgo"}]}, {"id": "harinera", "name": "Harinera", "tasks": [{"id": "harinera-arroz-largo", "name": "Arroz de grano largo"}, {"id": "harinera-arroz-normal", "name": "Arroz normal"}, {"id": "harinera-trigo", "name": "Trigo"}]}, {"id": "heno", "name": "Heno", "tasks": [{"id": "heno-hierba", "name": "Hierba"}]}, {"id": "holzfaller", "name": "Holzfäller / Leñador", "tasks": [{"id": "holzfaller-diesel", "name": "Diésel"}]}, {"id": "greenhouse-fast", "name": "Invernadero Greenhouse Fast", "tasks": [{"id": "greenhouse-fast-herbicida", "name": "Herbicida"}]}, {"id": "invernaderos", "name": "Invernaderos", "tasks": [{"id": "invernaderos-miel", "name": "Recoger miel"}]}, {"id": "laboratorio", "name": "Laboratorio", "tasks": [{"id": "laboratorio-leche", "name": "Leche"}]}, {"id": "lime-salt-herbicide", "name": "Lime Salt Herbicide", "tasks": [{"id": "lime-salt-piedras", "name": "Piedras"}]}, {"id": "malteria", "name": "Maltería", "tasks": [{"id": "malteria-cebada", "name": "Cebada"}, {"id": "malteria-sorgo", "name": "Sorgo"}, {"id": "malteria-trigo", "name": "Trigo"}]}, {"id": "ovejas", "name": "Ovejas", "tasks": [{"id": "ovejas-lana", "name": "Recoger lana"}]}, {"id": "taller", "name": "Taller", "tasks": [{"id": "taller-diesel", "name": "Diésel"}]}, {"id": "vacas", "name": "Vacas", "tasks": [{"id": "vacas-mineral", "name": "Alimento mineral"}, {"id": "vacas-ensilado", "name": "Ensilado"}, {"id": "vacas-heno", "name": "Heno"}, {"id": "vacas-paja", "name": "Paja"}, {"id": "vacas-paja-suelo", "name": "Paja para suelo de vacas"}, {"id": "vacas-estiercol", "name": "Recoger estiércol"}, {"id": "vacas-leche", "name": "Recoger leche"}, {"id": "vacas-purin", "name": "Recoger purín"}]}, {"id": "ventas", "name": "Ventas", "tasks": [{"id": "venta-lana", "name": "Lana de ovejas"}, {"id": "venta-miel", "name": "Miel de invernaderos"}, {"id": "venta-remolacha-cortada", "name": "Remolacha cortada de fábrica"}, {"id": "venta-virutas", "name": "Virutas de HOF o bosques"}]}];
 
-let catalog=[],dailyState={},generalTasks=[],autoState={},editing=false,draftCatalog=null,completedExpanded=false,backupExpanded=false;
+let catalog=[],dailyState={},generalTasks=[],autoState={},priorityState={},editing=false,draftCatalog=null,completedExpanded=false,backupExpanded=false;
 
 const $=id=>document.getElementById(id);
 const factoryView=$("factoryView"),productView=$("productView"),factoryViewBtn=$("factoryViewBtn"),
@@ -239,6 +365,7 @@ function saveCatalog(){localStorage.setItem(CATALOG_KEY,JSON.stringify(catalog))
 function saveDaily(){localStorage.setItem(DAILY_KEY,JSON.stringify(dailyState))}
 function saveGeneral(){localStorage.setItem(GENERAL_KEY,JSON.stringify(generalTasks))}
 function saveAuto(){localStorage.setItem(AUTO_KEY,JSON.stringify(autoState))}
+function savePriority(){localStorage.setItem(PRIORITY_KEY,JSON.stringify(priorityState))}
 function taskExists(id){return catalog.some(f=>f.tasks.some(t=>t.id===id))}
 function findTaskByNames(factoryName,taskName){
   const f=catalog.find(x=>x.name.trim().toLowerCase()===factoryName.trim().toLowerCase());
@@ -281,11 +408,13 @@ function loadData(){
   dailyState=readJSON(DAILY_KEY,{});
   generalTasks=readJSON(GENERAL_KEY,[]);
   autoState=readJSON(AUTO_KEY,{});
+  priorityState=readJSON(PRIORITY_KEY,{});
   if(!Array.isArray(catalog)||!catalog.length)catalog=clone(initialCatalog);
   if(!Array.isArray(generalTasks))generalTasks=[];
   sortCatalog(catalog);ensureDailyKeys();
   if(!autoState||typeof autoState!=="object")autoState={};
-  saveCatalog();saveDaily();saveAuto();
+  if(!priorityState||typeof priorityState!=="object")priorityState={};
+  saveCatalog();saveDaily();saveAuto();savePriority();
   const ruleIds=resolveRuleIds();
   if(ruleIds.aserradero&&dailyState[ruleIds.aserradero])applyBusinessRules(ruleIds.aserradero,"init");
   updateBackupStatus();
@@ -306,37 +435,160 @@ function renderGeneral(){
   }
 }
 function makeGeneralRow(task){
-  const wrap=document.createElement("div");wrap.className="swipe-wrap";
-  const swipe=document.createElement("div");swipe.className="swipe-delete";swipe.textContent="Eliminar";swipe.onclick=()=>deleteGeneral(task.id);
-  const row=document.createElement("div");row.className="task general-row"+(task.done?" done":"");
-  const label=document.createElement("label");label.className="task-label";
-  const input=document.createElement("input");input.type="checkbox";input.checked=task.done;
-  const mark=document.createElement("span");mark.className="checkmark";
-  const text=document.createElement("span");text.className="task-text";text.textContent=task.text;
-  input.onchange=()=>{const item=generalTasks.find(t=>t.id===task.id);if(item){item.done=input.checked;saveGeneral();renderGeneral()}};
-  label.append(input,mark,text);row.appendChild(label);
-  if(task.done){const del=document.createElement("button");del.className="general-delete";del.type="button";del.textContent="Eliminar";del.onclick=()=>deleteGeneral(task.id);row.appendChild(del);bindSwipe(row)}
-  wrap.append(swipe,row);return wrap;
+  const wrap=document.createElement("div");
+  wrap.className="dual-swipe-wrap";
+
+  const del=document.createElement("button");
+  del.className="swipe-delete-action";
+  del.type="button";
+  del.textContent="Eliminar";
+  del.onclick=()=>deleteGeneral(task.id);
+
+  const row=document.createElement("div");
+  row.className="task general-row"+(task.done?" done":"")+(priorityState[task.id]?" priority":"");
+
+  const label=document.createElement("label");
+  label.className="task-label";
+
+  const input=document.createElement("input");
+  input.type="checkbox";
+  input.checked=task.done;
+
+  const mark=document.createElement("span");
+  mark.className="checkmark";
+
+  const text=document.createElement("span");
+  text.className="task-text";
+  const main=document.createElement("span");
+  main.textContent=task.text;
+  text.appendChild(main);
+
+  if(priorityState[task.id]){
+    const note=document.createElement("span");
+    note.className="priority-note";
+    note.textContent="Prioritario";
+    text.appendChild(note);
+  }
+
+  input.onchange=()=>{
+    const item=generalTasks.find(t=>t.id===task.id);
+    if(item){
+      item.done=input.checked;
+      saveGeneral();
+      renderGeneral();
+    }
+  };
+
+  label.append(input,mark,text);
+  row.appendChild(label);
+  wrap.append(del,row);
+
+  bindDualSwipe(wrap,row,{
+    onPriority:()=>togglePriority(task.id),
+    onDelete:()=>deleteGeneral(task.id)
+  });
+
+  return wrap;
 }
-function bindSwipe(row){
-  let sx=0,sy=0,track=false;
-  row.addEventListener("touchstart",e=>{if(e.touches?.length===1){sx=e.touches[0].clientX;sy=e.touches[0].clientY;track=true}},{passive:true});
-  row.addEventListener("touchmove",e=>{if(!track||e.touches?.length!==1)return;const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;if(Math.abs(dy)>Math.abs(dx))return;if(dx<-28)row.classList.add("revealed");if(dx>20)row.classList.remove("revealed")},{passive:true});
-  row.addEventListener("touchend",()=>track=false,{passive:true});
+
+function bindDualSwipe(wrap,content,actions){
+  let sx=0,sy=0,dx=0,tracking=false;
+
+  content.addEventListener("touchstart",e=>{
+    if(e.touches?.length!==1)return;
+    sx=e.touches[0].clientX;
+    sy=e.touches[0].clientY;
+    dx=0;
+    tracking=true;
+  },{passive:true});
+
+  content.addEventListener("touchmove",e=>{
+    if(!tracking||e.touches?.length!==1)return;
+    dx=e.touches[0].clientX-sx;
+    const dy=e.touches[0].clientY-sy;
+    if(Math.abs(dy)>Math.abs(dx))return;
+
+    if(dx<-24){
+      wrap.classList.add("delete-open");
+    }else if(dx>12){
+      wrap.classList.remove("delete-open");
+    }
+  },{passive:true});
+
+  content.addEventListener("touchend",()=>{
+    if(!tracking)return;
+    tracking=false;
+
+    if(dx>58){
+      wrap.classList.remove("delete-open");
+      content.classList.add("priority-flash");
+      setTimeout(()=>content.classList.remove("priority-flash"),360);
+      actions.onPriority?.();
+    }
+  },{passive:true});
+
+  content.addEventListener("touchcancel",()=>{tracking=false},{passive:true});
 }
-function deleteGeneral(id){generalTasks=generalTasks.filter(t=>t.id!==id);saveGeneral();renderGeneral()}
+
+function togglePriority(id){
+  if(priorityState[id])delete priorityState[id];
+  else priorityState[id]=true;
+  savePriority();
+  renderAll();
+}
+
+function deleteGeneral(id){
+  generalTasks=generalTasks.filter(t=>t.id!==id);
+  delete priorityState[id];
+  saveGeneral();
+  savePriority();
+  renderGeneral();
+}
+
 function addGeneral(){const text=generalTaskInput.value.trim();if(!text)return;generalTasks.push({id:uid("general"),text,done:false});generalTaskInput.value="";saveGeneral();renderGeneral()}
 
 function makeCheckTask(task,factoryName){
-  const row=document.createElement("div");row.className="task"+(dailyState[task.id]?" done":"");
-  const label=document.createElement("label");label.className="task-label";
-  const input=document.createElement("input");input.type="checkbox";input.checked=Boolean(dailyState[task.id]);
-  const mark=document.createElement("span");mark.className="checkmark";
-  const text=document.createElement("span");text.className="task-text";
-  const main=document.createElement("span");main.textContent=factoryName||task.name;text.appendChild(main);
+  const wrap=document.createElement("div");
+  wrap.className="dual-swipe-wrap";
+
+  const del=document.createElement("button");
+  del.className="swipe-delete-action";
+  del.type="button";
+  del.textContent="Eliminar";
+  del.onclick=()=>deleteFactoryInput(task.id);
+
+  const row=document.createElement("div");
+  row.className="task"+(dailyState[task.id]?" done":"")+(priorityState[task.id]?" priority":"");
+
+  const label=document.createElement("label");
+  label.className="task-label";
+
+  const input=document.createElement("input");
+  input.type="checkbox";
+  input.checked=Boolean(dailyState[task.id]);
+
+  const mark=document.createElement("span");
+  mark.className="checkmark";
+
+  const text=document.createElement("span");
+  text.className="task-text";
+
+  const main=document.createElement("span");
+  main.textContent=factoryName||task.name;
+  text.appendChild(main);
+
+  if(priorityState[task.id]){
+    const pnote=document.createElement("span");
+    pnote.className="priority-note";
+    pnote.textContent="Prioritario";
+    text.appendChild(pnote);
+  }
 
   if(autoState[task.id]){
-    const note=document.createElement("span");note.className="auto-note";note.textContent="Automático";text.appendChild(note);
+    const note=document.createElement("span");
+    note.className="auto-note";
+    note.textContent="Automático";
+    text.appendChild(note);
   }
 
   input.onchange=()=>{
@@ -346,8 +598,42 @@ function makeCheckTask(task,factoryName){
     saveDaily();saveAuto();renderAll();
   };
 
-  label.append(input,mark,text);row.appendChild(label);return row;
+  label.append(input,mark,text);
+  row.appendChild(label);
+  wrap.append(del,row);
+
+  bindDualSwipe(wrap,row,{
+    onPriority:()=>togglePriority(task.id),
+    onDelete:()=>deleteFactoryInput(task.id)
+  });
+
+  return wrap;
 }
+
+function deleteFactoryInput(taskId){
+  let found=false;
+  catalog.forEach(f=>{
+    const before=f.tasks.length;
+    f.tasks=f.tasks.filter(t=>t.id!==taskId);
+    if(f.tasks.length!==before)found=true;
+  });
+
+  if(editing&&draftCatalog){
+    draftCatalog.forEach(f=>f.tasks=f.tasks.filter(t=>t.id!==taskId));
+  }
+
+  delete dailyState[taskId];
+  delete autoState[taskId];
+  delete priorityState[taskId];
+
+  saveCatalog();saveDaily();saveAuto();savePriority();
+
+  if(found){
+    sortCatalog(catalog);
+    renderAll();
+  }
+}
+
 function markFactoryComplete(id){
   const f=catalog.find(x=>x.id===id);if(!f)return;
   f.tasks.forEach(t=>{
@@ -380,7 +666,22 @@ function makeFactoryCard(f,completed){
   const sub=document.createElement("div");sub.className="factory-sub";sub.textContent=f.tasks.length===1?"1 tarea":`${f.tasks.length} tareas`;tw.append(title,sub);head.appendChild(tw);
   const acts=document.createElement("div");acts.className="factory-head-actions";
   const p=document.createElement("div");p.className="pending-badge";const n=factoryPending(f);p.textContent=completed?"✓":(n===1?"1 pendiente":`${n} pendientes`);
-  const btn=document.createElement("button");btn.className="complete-factory-btn";btn.type="button";btn.textContent="✓";btn.onclick=()=>markFactoryComplete(f.id);acts.append(p,btn);head.appendChild(acts);card.appendChild(head);
+  const pencil=document.createElement("button");
+  pencil.className="factory-edit-pencil";
+  pencil.type="button";
+  pencil.textContent="✎";
+  pencil.setAttribute("aria-label",`Editar ${f.name}`);
+  pencil.onclick=()=>openFactoryEditor(f.id);
+
+  const btn=document.createElement("button");
+  btn.className="complete-factory-btn";
+  btn.type="button";
+  btn.textContent="✓";
+  btn.onclick=()=>markFactoryComplete(f.id);
+
+  acts.append(p,pencil,btn);
+  head.appendChild(acts);
+  card.appendChild(head);
   [...f.tasks].sort((a,b)=>{const ad=!!dailyState[a.id],bd=!!dailyState[b.id];if(ad!==bd)return ad?1:-1;return alphaCompare(a.name,b.name)}).forEach(t=>card.appendChild(makeCheckTask(t)));
   return card;
 }
@@ -392,7 +693,42 @@ function renderEditFactoryView(){
     const tw=document.createElement("div");tw.className="factory-title-wrap";
     const lab=document.createElement("span");lab.className="factory-edit-label";lab.textContent="Fábrica";
     const fi=document.createElement("input");fi.className="edit-input factory-name-input";fi.value=f.name;fi.dataset.factoryId=f.id;tw.append(lab,fi);head.appendChild(tw);card.appendChild(head);
-    [...f.tasks].sort((a,b)=>alphaCompare(a.name,b.name)).forEach(t=>{const row=document.createElement("div");row.className="task";const inp=document.createElement("input");inp.className="edit-input task-name-input";inp.value=t.name;inp.dataset.factoryId=f.id;inp.dataset.taskId=t.id;row.appendChild(inp);card.appendChild(row)});
+    [...f.tasks].sort((a,b)=>alphaCompare(a.name,b.name)).forEach(t=>{
+      const wrap=document.createElement("div");
+      wrap.className="dual-swipe-wrap";
+
+      const del=document.createElement("button");
+      del.className="swipe-delete-action";
+      del.type="button";
+      del.textContent="Eliminar";
+      del.onclick=()=>{
+        syncDraftNamesFromDOM();
+        const factory=draftCatalog.find(x=>x.id===f.id);
+        if(factory)factory.tasks=factory.tasks.filter(x=>x.id!==t.id);
+        delete dailyState[t.id];
+        delete autoState[t.id];
+        delete priorityState[t.id];
+        saveDaily();saveAuto();savePriority();
+        renderFactoryView();
+      };
+
+      const content=document.createElement("div");
+      content.className="edit-swipe-content task"+(priorityState[t.id]?" priority":"");
+
+      const inp=document.createElement("input");
+      inp.className="edit-input task-name-input";
+      inp.value=t.name;
+      inp.dataset.factoryId=f.id;
+      inp.dataset.taskId=t.id;
+
+      content.appendChild(inp);
+      wrap.append(del,content);
+      bindDualSwipe(wrap,content,{
+        onPriority:()=>{syncDraftNamesFromDOM();togglePriority(t.id)},
+        onDelete:()=>del.click()
+      });
+      card.appendChild(wrap);
+    });
     const ar=document.createElement("div");ar.className="add-input-row";const ab=document.createElement("button");ab.className="add-input-btn";ab.type="button";ab.textContent="＋ Añadir input";ab.onclick=()=>{syncDraftNamesFromDOM();openAddInput(f.id)};ar.appendChild(ab);card.appendChild(ar);factoryView.appendChild(card);
   });
 }
@@ -402,7 +738,30 @@ function syncDraftNamesFromDOM(){
   document.querySelectorAll(".task-name-input").forEach(i=>{const f=draftCatalog.find(x=>x.id===i.dataset.factoryId);const t=f?.tasks.find(x=>x.id===i.dataset.taskId);if(t&&i.value.trim())t.name=i.value.trim()});
 }
 function beginEdit(){setView("factory");editing=true;draftCatalog=clone(catalog);document.body.classList.add("editing");editBtn.textContent="Guardar";editBtn.classList.remove("secondary");editBtn.classList.add("editing-save");renderFactoryView()}
-function saveEdit(){syncDraftNamesFromDOM();sortCatalog(draftCatalog);catalog=clone(draftCatalog);editing=false;draftCatalog=null;document.body.classList.remove("editing");editBtn.textContent="Editar";editBtn.classList.remove("editing-save");editBtn.classList.add("secondary");ensureDailyKeys();saveCatalog();saveDaily();renderAll()}
+function saveEdit(){
+  syncDraftNamesFromDOM();
+  sortCatalog(draftCatalog);
+  catalog=clone(draftCatalog);
+
+  const valid=new Set(catalog.flatMap(f=>f.tasks.map(t=>t.id)));
+  Object.keys(dailyState).forEach(id=>{if(!valid.has(id))delete dailyState[id]});
+  Object.keys(autoState).forEach(id=>{if(!valid.has(id))delete autoState[id]});
+  Object.keys(priorityState).forEach(id=>{
+    const isGeneral=generalTasks.some(t=>t.id===id);
+    if(!valid.has(id)&&!isGeneral)delete priorityState[id];
+  });
+
+  editing=false;
+  draftCatalog=null;
+  document.body.classList.remove("editing");
+  editBtn.textContent="Editar";
+  editBtn.classList.remove("editing-save");
+  editBtn.classList.add("secondary");
+
+  ensureDailyKeys();
+  saveCatalog();saveDaily();saveAuto();savePriority();
+  renderAll();
+}
 
 function renderProductView(){
   productView.innerHTML="";const products={};
@@ -415,19 +774,164 @@ function setView(view,save=true){const fac=view!=="product";factoryView.classLis
 
 function openModal(title,fields,onSave){modalTitle.textContent=title;modalFields.innerHTML="";fields.forEach(f=>{const l=document.createElement("label");l.textContent=f.label;const i=document.createElement("input");i.id=f.id;i.type="text";i.placeholder=f.placeholder||"";modalFields.append(l,i)});modalSaveBtn.onclick=onSave;modalBackdrop.classList.add("open")}
 function closeModal(){modalBackdrop.classList.remove("open");modalSaveBtn.onclick=null}
-function openNewFactory(){if(editing)syncDraftNamesFromDOM();openModal("Nueva fábrica",[{id:"nf",label:"Nombre de la fábrica",placeholder:"Ej. Cervecería"},{id:"nt",label:"Primer input (opcional)",placeholder:"Ej. Cebada"}],()=>{const name=$("nf").value.trim(),task=$("nt").value.trim();if(!name)return;const target=editing?draftCatalog:catalog;const f={id:uid("factory"),name,tasks:[]};if(task){const id=uid("task");f.tasks.push({id,name:task});dailyState[id]=false}target.push(f);sortCatalog(target);if(!editing){saveCatalog();saveDaily();renderAll()}else renderFactoryView();closeModal()})}
-function openAddInput(fid){const f=draftCatalog.find(x=>x.id===fid);if(!f)return;openModal(`Añadir input · ${f.name}`,[{id:"ni",label:"Nombre del input / tarea",placeholder:"Ej. Diésel"}],()=>{const name=$("ni").value.trim();if(!name)return;const id=uid("task");f.tasks.push({id,name});f.tasks.sort((a,b)=>alphaCompare(a.name,b.name));dailyState[id]=false;saveDaily();closeModal();renderFactoryView()})}
+function openNewFactory(){
+  openFactoryEditor(null);
+}
+
+function openFactoryEditor(factoryId){
+  if(editing)saveEdit();
+
+  const original=factoryId?catalog.find(f=>f.id===factoryId):null;
+  const draft=original?clone(original):{id:uid("factory"),name:"",tasks:[]};
+
+  modalTitle.textContent=original?`Editar fábrica · ${original.name}`:"Nueva fábrica";
+  modalFields.innerHTML="";
+
+  const nameLabel=document.createElement("label");
+  nameLabel.textContent="Nombre de la fábrica";
+  const nameInput=document.createElement("input");
+  nameInput.id="factoryEditorName";
+  nameInput.type="text";
+  nameInput.placeholder="Ej. Cervecería";
+  nameInput.value=draft.name;
+  modalFields.append(nameLabel,nameInput);
+
+  const inputsLabel=document.createElement("label");
+  inputsLabel.textContent="Inputs";
+  modalFields.appendChild(inputsLabel);
+
+  const list=document.createElement("div");
+  list.className="factory-editor-list";
+  modalFields.appendChild(list);
+
+  const hint=document.createElement("div");
+  hint.className="factory-editor-hint";
+  hint.textContent="Swipe derecha → izquierda para eliminar. Swipe izquierda → derecha para marcar prioridad.";
+  modalFields.appendChild(hint);
+
+  const add=document.createElement("button");
+  add.type="button";
+  add.className="factory-editor-add";
+  add.textContent="＋ Añadir input";
+  modalFields.appendChild(add);
+
+  function addDraftInput(name="",id=null){
+    draft.tasks.push({id:id||uid("task"),name});
+    renderDraftInputs();
+  }
+
+  function renderDraftInputs(){
+    list.innerHTML="";
+
+    draft.tasks.forEach(task=>{
+      const wrap=document.createElement("div");
+      wrap.className="dual-swipe-wrap";
+
+      const del=document.createElement("button");
+      del.className="swipe-delete-action";
+      del.type="button";
+      del.textContent="Eliminar";
+      del.onclick=()=>{
+        draft.tasks=draft.tasks.filter(t=>t.id!==task.id);
+        renderDraftInputs();
+      };
+
+      const content=document.createElement("div");
+      content.className="edit-swipe-content factory-editor-input-row"+(priorityState[task.id]?" priority":"");
+
+      const inp=document.createElement("input");
+      inp.type="text";
+      inp.value=task.name;
+      inp.placeholder="Nombre del input";
+      inp.oninput=()=>task.name=inp.value;
+
+      content.appendChild(inp);
+      wrap.append(del,content);
+
+      bindDualSwipe(wrap,content,{
+        onPriority:()=>{
+          if(priorityState[task.id])delete priorityState[task.id];
+          else priorityState[task.id]=true;
+          savePriority();
+          renderDraftInputs();
+        },
+        onDelete:()=>del.click()
+      });
+
+      list.appendChild(wrap);
+    });
+  }
+
+  add.onclick=()=>addDraftInput("");
+
+  if(!draft.tasks.length){
+    addDraftInput("");
+  }else{
+    renderDraftInputs();
+  }
+
+  modalSaveBtn.onclick=()=>{
+    const name=nameInput.value.trim();
+    if(!name)return;
+
+    draft.name=name;
+    draft.tasks=draft.tasks
+      .map(t=>({id:t.id,name:(t.name||"").trim()}))
+      .filter(t=>t.name);
+
+    draft.tasks.forEach(t=>{
+      if(typeof dailyState[t.id]!=="boolean")dailyState[t.id]=false;
+    });
+
+    if(original){
+      const idx=catalog.findIndex(f=>f.id===original.id);
+      if(idx>=0)catalog[idx]=clone(draft);
+    }else{
+      catalog.push(clone(draft));
+    }
+
+    sortCatalog(catalog);
+
+    const valid=new Set(catalog.flatMap(f=>f.tasks.map(t=>t.id)));
+    Object.keys(dailyState).forEach(id=>{if(!valid.has(id))delete dailyState[id]});
+    Object.keys(autoState).forEach(id=>{if(!valid.has(id))delete autoState[id]});
+    Object.keys(priorityState).forEach(id=>{
+      const isGeneral=generalTasks.some(t=>t.id===id);
+      if(!valid.has(id)&&!isGeneral)delete priorityState[id];
+    });
+
+    saveCatalog();saveDaily();saveAuto();savePriority();
+    closeModal();
+    renderAll();
+  };
+
+  modalBackdrop.classList.add("open");
+  setTimeout(()=>nameInput.focus(),50);
+}
+
+function openAddInput(fid){
+  if(!editing||!draftCatalog)return;
+  syncDraftNamesFromDOM();
+  const f=draftCatalog.find(x=>x.id===fid);
+  if(!f)return;
+  const id=uid("task");
+  f.tasks.push({id,name:"Nuevo input"});
+  dailyState[id]=false;
+  saveDaily();
+  renderFactoryView();
+}
 
 function makeBackupObject(){
   return {
     format:"FS25_CHECKLIST_BACKUP",
-    schemaVersion:2,
-    appVersion:"3.2",
+    schemaVersion:3,
+    appVersion:"3.2.1",
     exportedAt:new Date().toISOString(),
     catalog:clone(catalog),
     generalTasks:clone(generalTasks),
     dailyState:clone(dailyState),
     autoState:clone(autoState),
+    priorityState:clone(priorityState),
     view:localStorage.getItem(VIEW_KEY)||"factory"
   };
 }
@@ -458,9 +962,9 @@ function validateBackup(obj){
 async function importBackupFile(file){
   try{
     const obj=JSON.parse(await file.text());validateBackup(obj);
-    catalog=clone(obj.catalog);generalTasks=clone(obj.generalTasks);dailyState=clone(obj.dailyState||{});autoState=clone(obj.autoState||{});
+    catalog=clone(obj.catalog);generalTasks=clone(obj.generalTasks);dailyState=clone(obj.dailyState||{});autoState=clone(obj.autoState||{});priorityState=clone(obj.priorityState||{});
     sortCatalog(catalog);ensureDailyKeys();
-    saveCatalog();saveGeneral();saveDaily();saveAuto();
+    saveCatalog();saveGeneral();saveDaily();saveAuto();savePriority();
     if(obj.view==="product"||obj.view==="factory")localStorage.setItem(VIEW_KEY,obj.view);
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastImport:new Date().toISOString(),fileName:file.name}));
     completedExpanded=false;renderAll();setView(localStorage.getItem(VIEW_KEY)||"factory",false);updateBackupStatus();
@@ -471,7 +975,7 @@ function updateBackupStatus(){
   const meta=readJSON(BACKUP_META_KEY,{});
   if(meta.lastExport){const d=new Date(meta.lastExport);backupStatus.textContent=`Última copia exportada: ${d.toLocaleString("es-ES")}`;}
   else if(meta.lastImport){const d=new Date(meta.lastImport);backupStatus.textContent=`Última copia importada: ${d.toLocaleString("es-ES")}`;}
-  else backupStatus.textContent="La copia incluye fábricas, inputs, tareas generales, reglas automáticas y estado diario.";
+  else backupStatus.textContent="La copia incluye fábricas, inputs, tareas generales, prioridades, reglas automáticas y estado diario.";
 }
 
 addGeneralTaskBtn.onclick=addGeneral;
@@ -480,7 +984,23 @@ factoryViewBtn.onclick=()=>{if(editing)saveEdit();setView("factory")};
 productViewBtn.onclick=()=>{if(editing)saveEdit();setView("product")};
 newFactoryBtn.onclick=openNewFactory;
 editBtn.onclick=()=>editing?saveEdit():beginEdit();
-resetBtn.onclick=()=>{if(editing)saveEdit();if(!confirm("¿Empezar un nuevo día?"))return;generalTasks=generalTasks.filter(t=>!t.done);saveGeneral();catalog.forEach(f=>f.tasks.forEach(t=>dailyState[t.id]=false));autoState={};saveDaily();saveAuto();completedExpanded=false;renderAll();window.scrollTo({top:0,behavior:"smooth"})};
+resetBtn.onclick=()=>{
+  if(editing)saveEdit();
+  if(!confirm("¿Empezar un nuevo día?"))return;
+
+  const removedGeneralIds=generalTasks.filter(t=>t.done).map(t=>t.id);
+  generalTasks=generalTasks.filter(t=>!t.done);
+  removedGeneralIds.forEach(id=>delete priorityState[id]);
+  saveGeneral();savePriority();
+
+  catalog.forEach(f=>f.tasks.forEach(t=>dailyState[t.id]=false));
+  autoState={};
+  saveDaily();saveAuto();
+
+  completedExpanded=false;
+  renderAll();
+  window.scrollTo({top:0,behavior:"smooth"});
+};
 backupToggle.onclick=()=>{
   backupExpanded=!backupExpanded;
   backupToggle.classList.toggle("open",backupExpanded);
