@@ -81,6 +81,69 @@
     #importFile{display:none}
     @media(min-width:700px){.modal-backdrop{align-items:center}}
     @media(max-width:420px){.counter{font-size:20px}.status{padding:12px 13px}button{padding-inline:12px}.general-delete{display:none!important}.factory-head{align-items:flex-start}.data-buttons{grid-template-columns:1fr}}
+  
+    /* V3.2 */
+    .status-actions{
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+      align-items:stretch;
+      min-width:116px;
+    }
+    .status-actions button{
+      width:100%;
+      min-height:40px;
+      padding:8px 12px;
+    }
+    #editBtn.editing-save{
+      background:var(--sage);
+      color:#fff;
+      box-shadow:0 6px 16px rgba(0,0,0,.14);
+    }
+    .backup-toggle{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:20px;
+      padding:14px 16px;
+      border-radius:20px;
+      background:#fff;
+      color:var(--text);
+      box-shadow:var(--shadow);
+    }
+    .backup-toggle-left{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      font-weight:800;
+    }
+    .backup-toggle .chevron{font-size:17px}
+    .backup-toggle.open .chevron{transform:rotate(90deg)}
+    .backup-panel{
+      display:none;
+      margin-top:8px;
+      padding:14px;
+      border-radius:20px;
+      background:#fff;
+      box-shadow:var(--shadow);
+    }
+    .backup-panel.open{display:block}
+    .auto-note{
+      display:block;
+      margin-top:3px;
+      color:var(--sage);
+      font-size:11px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    .factory-card.completed .auto-note{color:rgba(255,255,255,.82)}
+    @media(max-width:420px){
+      .status-actions{min-width:104px}
+    }
+
   </style>
 </head>
 <body>
@@ -98,8 +161,14 @@
   </section>
 
   <section class="status">
-    <div><div class="status-label">Estado del día</div><div id="counter" class="counter">0 pendientes</div></div>
-    <button id="resetBtn" type="button">Nuevo día</button>
+    <div>
+      <div class="status-label">Estado del día</div>
+      <div id="counter" class="counter">0 pendientes</div>
+    </div>
+    <div class="status-actions">
+      <button id="resetBtn" type="button">Nuevo día</button>
+      <button id="editBtn" class="secondary" type="button">Editar</button>
+    </div>
   </section>
 
   <nav class="view-switch">
@@ -109,24 +178,26 @@
 
   <div class="toolbar">
     <div><button id="newFactoryBtn" class="sage" type="button">＋ Nueva fábrica</button></div>
-    <div><button id="editBtn" class="secondary" type="button">Editar</button></div>
   </div>
 
   <div id="allDone" class="all-done">Todas las fábricas están revisadas.</div>
   <div id="factoryView" class="view active"></div>
   <div id="productView" class="view"></div>
 
-  <section class="panel data-panel">
-    <div class="panel-head" style="padding:0 0 12px"><h2 class="panel-title">Datos</h2></div>
+  <button id="backupToggle" class="backup-toggle" type="button">
+    <span class="backup-toggle-left"><span class="chevron">›</span><span>Copia de seguridad</span></span>
+    <span style="color:var(--muted);font-size:13px">JSON</span>
+  </button>
+  <section id="backupPanel" class="backup-panel">
     <div class="data-buttons">
       <button id="exportBtn" class="sage" type="button">Exportar copia</button>
       <button id="importBtn" class="secondary" type="button">Importar copia</button>
     </div>
-    <div id="backupStatus" class="data-note">La copia incluye fábricas, inputs, tareas generales y estado diario.</div>
+    <div id="backupStatus" class="data-note">La copia incluye fábricas, inputs, tareas generales, reglas automáticas y estado diario.</div>
     <input id="importFile" type="file" accept=".json,application/json">
   </section>
 
-  <div class="version-label">V3.1.1</div>
+  <div class="version-label">V3.2</div>
 </main>
 
 <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
@@ -147,9 +218,10 @@ const GENERAL_KEY="fs25-general-v30";
 const VIEW_KEY="fs25-view-v30";
 const MIGRATION_KEY="fs25-migrated-v30";
 const BACKUP_META_KEY="fs25-backup-meta-v1";
+const AUTO_KEY="fs25-auto-v32";
 const initialCatalog=[{"id": "aserradero", "name": "Aserradero", "tasks": [{"id": "aserradero-madera", "name": "Madera / troncos"}]}, {"id": "azucarera", "name": "Azucarera", "tasks": [{"id": "azucarera-remolacha", "name": "Remolacha"}, {"id": "azucarera-sorgo", "name": "Sorgo"}]}, {"id": "beet-pulp", "name": "Beet Pulp", "tasks": [{"id": "beetpulp-diesel", "name": "Diésel"}, {"id": "beetpulp-remolacha", "name": "Remolacha"}]}, {"id": "bga", "name": "BGA", "tasks": [{"id": "bga-ensilaje", "name": "Ensilaje"}]}, {"id": "fabrica-semillas", "name": "Fábrica de semillas", "tasks": [{"id": "semillas-maiz", "name": "Maíz"}, {"id": "semillas-trigo", "name": "Trigo"}]}, {"id": "fabrica-oil-aceites", "name": "Fábrica Oil Aceites", "tasks": [{"id": "oil-colza", "name": "Colza"}, {"id": "oil-girasol", "name": "Girasol"}, {"id": "oil-maiz", "name": "Maíz"}, {"id": "oil-soja", "name": "Soja"}]}, {"id": "fermentador-pequeno", "name": "Fermentador pequeño", "tasks": [{"id": "fermentador-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "fermenter-stevie", "name": "Fermenter Stevie", "tasks": [{"id": "stevie-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "gallinas", "name": "Gallinas", "tasks": [{"id": "gallinas-huevos", "name": "Recoger huevos"}, {"id": "gallinas-cereal", "name": "Trigo, cebada o sorgo"}]}, {"id": "harinera", "name": "Harinera", "tasks": [{"id": "harinera-arroz-largo", "name": "Arroz de grano largo"}, {"id": "harinera-arroz-normal", "name": "Arroz normal"}, {"id": "harinera-trigo", "name": "Trigo"}]}, {"id": "heno", "name": "Heno", "tasks": [{"id": "heno-hierba", "name": "Hierba"}]}, {"id": "holzfaller", "name": "Holzfäller / Leñador", "tasks": [{"id": "holzfaller-diesel", "name": "Diésel"}]}, {"id": "greenhouse-fast", "name": "Invernadero Greenhouse Fast", "tasks": [{"id": "greenhouse-fast-herbicida", "name": "Herbicida"}]}, {"id": "invernaderos", "name": "Invernaderos", "tasks": [{"id": "invernaderos-miel", "name": "Recoger miel"}]}, {"id": "laboratorio", "name": "Laboratorio", "tasks": [{"id": "laboratorio-leche", "name": "Leche"}]}, {"id": "lime-salt-herbicide", "name": "Lime Salt Herbicide", "tasks": [{"id": "lime-salt-piedras", "name": "Piedras"}]}, {"id": "malteria", "name": "Maltería", "tasks": [{"id": "malteria-cebada", "name": "Cebada"}, {"id": "malteria-sorgo", "name": "Sorgo"}, {"id": "malteria-trigo", "name": "Trigo"}]}, {"id": "ovejas", "name": "Ovejas", "tasks": [{"id": "ovejas-lana", "name": "Recoger lana"}]}, {"id": "taller", "name": "Taller", "tasks": [{"id": "taller-diesel", "name": "Diésel"}]}, {"id": "vacas", "name": "Vacas", "tasks": [{"id": "vacas-mineral", "name": "Alimento mineral"}, {"id": "vacas-ensilado", "name": "Ensilado"}, {"id": "vacas-heno", "name": "Heno"}, {"id": "vacas-paja", "name": "Paja"}, {"id": "vacas-paja-suelo", "name": "Paja para suelo de vacas"}, {"id": "vacas-estiercol", "name": "Recoger estiércol"}, {"id": "vacas-leche", "name": "Recoger leche"}, {"id": "vacas-purin", "name": "Recoger purín"}]}, {"id": "ventas", "name": "Ventas", "tasks": [{"id": "venta-lana", "name": "Lana de ovejas"}, {"id": "venta-miel", "name": "Miel de invernaderos"}, {"id": "venta-remolacha-cortada", "name": "Remolacha cortada de fábrica"}, {"id": "venta-virutas", "name": "Virutas de HOF o bosques"}]}];
 
-let catalog=[],dailyState={},generalTasks=[],editing=false,draftCatalog=null,completedExpanded=false;
+let catalog=[],dailyState={},generalTasks=[],autoState={},editing=false,draftCatalog=null,completedExpanded=false,backupExpanded=false;
 
 const $=id=>document.getElementById(id);
 const factoryView=$("factoryView"),productView=$("productView"),factoryViewBtn=$("factoryViewBtn"),
@@ -158,7 +230,7 @@ resetBtn=$("resetBtn"),counter=$("counter"),allDone=$("allDone"),generalTaskInpu
 addGeneralTaskBtn=$("addGeneralTaskBtn"),generalList=$("generalList"),generalEmpty=$("generalEmpty"),
 modalBackdrop=$("modalBackdrop"),modalTitle=$("modalTitle"),modalFields=$("modalFields"),
 modalCancelBtn=$("modalCancelBtn"),modalSaveBtn=$("modalSaveBtn"),exportBtn=$("exportBtn"),
-importBtn=$("importBtn"),importFile=$("importFile"),backupStatus=$("backupStatus");
+importBtn=$("importBtn"),importFile=$("importFile"),backupStatus=$("backupStatus"),backupToggle=$("backupToggle"),backupPanel=$("backupPanel");
 
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function uid(prefix){return prefix+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8)}
@@ -166,6 +238,41 @@ function readJSON(key,fallback){try{const raw=localStorage.getItem(key);return r
 function saveCatalog(){localStorage.setItem(CATALOG_KEY,JSON.stringify(catalog))}
 function saveDaily(){localStorage.setItem(DAILY_KEY,JSON.stringify(dailyState))}
 function saveGeneral(){localStorage.setItem(GENERAL_KEY,JSON.stringify(generalTasks))}
+function saveAuto(){localStorage.setItem(AUTO_KEY,JSON.stringify(autoState))}
+function taskExists(id){return catalog.some(f=>f.tasks.some(t=>t.id===id))}
+function findTaskByNames(factoryName,taskName){
+  const f=catalog.find(x=>x.name.trim().toLowerCase()===factoryName.trim().toLowerCase());
+  return f?.tasks.find(t=>t.name.trim().toLowerCase()===taskName.trim().toLowerCase())||null;
+}
+function resolveRuleIds(){
+  const aserradero=taskExists("aserradero-madera")?"aserradero-madera":findTaskByNames("Aserradero","Madera / troncos")?.id;
+  const lenador=taskExists("holzfaller-diesel")?"holzfaller-diesel":findTaskByNames("Holzfäller / Leñador","Diésel")?.id;
+  return {aserradero,lenador};
+}
+function applyBusinessRules(changedTaskId,source="manual"){
+  const ids=resolveRuleIds();
+  if(!ids.aserradero||!ids.lenador)return;
+
+  if(changedTaskId===ids.aserradero){
+    if(dailyState[ids.aserradero]){
+      if(!dailyState[ids.lenador]){
+        dailyState[ids.lenador]=true;
+        autoState[ids.lenador]="aserradero-madera";
+      }
+    }else if(autoState[ids.lenador]==="aserradero-madera"){
+      dailyState[ids.lenador]=false;
+      delete autoState[ids.lenador];
+    }
+  }
+
+  if(changedTaskId===ids.lenador && source==="manual"){
+    delete autoState[ids.lenador];
+  }
+
+  saveDaily();
+  saveAuto();
+}
+
 function alphaCompare(a,b){return a.localeCompare(b,"es",{sensitivity:"base",numeric:true})}
 function sortCatalog(target){target.sort((a,b)=>alphaCompare(a.name,b.name));target.forEach(f=>f.tasks.sort((a,b)=>alphaCompare(a.name,b.name)));return target}
 function ensureDailyKeys(){catalog.forEach(f=>f.tasks.forEach(t=>{if(typeof dailyState[t.id]!=="boolean")dailyState[t.id]=false}))}
@@ -173,9 +280,15 @@ function loadData(){
   catalog=readJSON(CATALOG_KEY,clone(initialCatalog));
   dailyState=readJSON(DAILY_KEY,{});
   generalTasks=readJSON(GENERAL_KEY,[]);
+  autoState=readJSON(AUTO_KEY,{});
   if(!Array.isArray(catalog)||!catalog.length)catalog=clone(initialCatalog);
   if(!Array.isArray(generalTasks))generalTasks=[];
-  sortCatalog(catalog);ensureDailyKeys();saveCatalog();saveDaily();updateBackupStatus();
+  sortCatalog(catalog);ensureDailyKeys();
+  if(!autoState||typeof autoState!=="object")autoState={};
+  saveCatalog();saveDaily();saveAuto();
+  const ruleIds=resolveRuleIds();
+  if(ruleIds.aserradero&&dailyState[ruleIds.aserradero])applyBusinessRules(ruleIds.aserradero,"init");
+  updateBackupStatus();
 }
 function factoryComplete(f){return f.tasks.length>0&&f.tasks.every(t=>Boolean(dailyState[t.id]))}
 function factoryPending(f){return f.tasks.filter(t=>!dailyState[t.id]).length}
@@ -219,11 +332,31 @@ function makeCheckTask(task,factoryName){
   const label=document.createElement("label");label.className="task-label";
   const input=document.createElement("input");input.type="checkbox";input.checked=Boolean(dailyState[task.id]);
   const mark=document.createElement("span");mark.className="checkmark";
-  const text=document.createElement("span");text.className="task-text";text.textContent=factoryName||task.name;
-  input.onchange=()=>{dailyState[task.id]=input.checked;saveDaily();renderAll()};
+  const text=document.createElement("span");text.className="task-text";
+  const main=document.createElement("span");main.textContent=factoryName||task.name;text.appendChild(main);
+
+  if(autoState[task.id]){
+    const note=document.createElement("span");note.className="auto-note";note.textContent="Automático";text.appendChild(note);
+  }
+
+  input.onchange=()=>{
+    dailyState[task.id]=input.checked;
+    if(autoState[task.id])delete autoState[task.id];
+    applyBusinessRules(task.id,"manual");
+    saveDaily();saveAuto();renderAll();
+  };
+
   label.append(input,mark,text);row.appendChild(label);return row;
 }
-function markFactoryComplete(id){const f=catalog.find(x=>x.id===id);if(!f)return;f.tasks.forEach(t=>dailyState[t.id]=true);saveDaily();renderAll()}
+function markFactoryComplete(id){
+  const f=catalog.find(x=>x.id===id);if(!f)return;
+  f.tasks.forEach(t=>{
+    dailyState[t.id]=true;
+    if(autoState[t.id])delete autoState[t.id];
+    applyBusinessRules(t.id,"manual");
+  });
+  saveDaily();saveAuto();renderAll();
+}
 function renderFactoryView(){
   factoryView.innerHTML="";
   if(editing){renderEditFactoryView();return}
@@ -268,8 +401,8 @@ function syncDraftNamesFromDOM(){
   document.querySelectorAll(".factory-name-input").forEach(i=>{const f=draftCatalog.find(x=>x.id===i.dataset.factoryId);if(f&&i.value.trim())f.name=i.value.trim()});
   document.querySelectorAll(".task-name-input").forEach(i=>{const f=draftCatalog.find(x=>x.id===i.dataset.factoryId);const t=f?.tasks.find(x=>x.id===i.dataset.taskId);if(t&&i.value.trim())t.name=i.value.trim()});
 }
-function beginEdit(){editing=true;draftCatalog=clone(catalog);document.body.classList.add("editing");editBtn.textContent="Guardar";editBtn.classList.remove("secondary");editBtn.classList.add("sage");renderFactoryView()}
-function saveEdit(){syncDraftNamesFromDOM();sortCatalog(draftCatalog);catalog=clone(draftCatalog);editing=false;draftCatalog=null;document.body.classList.remove("editing");editBtn.textContent="Editar";editBtn.classList.remove("sage");editBtn.classList.add("secondary");ensureDailyKeys();saveCatalog();saveDaily();renderAll()}
+function beginEdit(){setView("factory");editing=true;draftCatalog=clone(catalog);document.body.classList.add("editing");editBtn.textContent="Guardar";editBtn.classList.remove("secondary");editBtn.classList.add("editing-save");renderFactoryView()}
+function saveEdit(){syncDraftNamesFromDOM();sortCatalog(draftCatalog);catalog=clone(draftCatalog);editing=false;draftCatalog=null;document.body.classList.remove("editing");editBtn.textContent="Editar";editBtn.classList.remove("editing-save");editBtn.classList.add("secondary");ensureDailyKeys();saveCatalog();saveDaily();renderAll()}
 
 function renderProductView(){
   productView.innerHTML="";const products={};
@@ -278,7 +411,7 @@ function renderProductView(){
 }
 function updateCounter(){const p=totalPending();counter.textContent=p===1?"1 pendiente":`${p} pendientes`;allDone.classList.toggle("visible",catalog.length>0&&p===0)}
 function renderAll(){renderGeneral();renderFactoryView();renderProductView();updateCounter()}
-function setView(view,save=true){const fac=view!=="product";factoryView.classList.toggle("active",fac);productView.classList.toggle("active",!fac);factoryViewBtn.classList.toggle("active",fac);productViewBtn.classList.toggle("active",!fac);newFactoryBtn.style.display=fac?"inline-flex":"none";editBtn.style.display=fac?"inline-flex":"none";if(save)localStorage.setItem(VIEW_KEY,fac?"factory":"product")}
+function setView(view,save=true){const fac=view!=="product";factoryView.classList.toggle("active",fac);productView.classList.toggle("active",!fac);factoryViewBtn.classList.toggle("active",fac);productViewBtn.classList.toggle("active",!fac);newFactoryBtn.style.display=fac?"inline-flex":"none";if(save)localStorage.setItem(VIEW_KEY,fac?"factory":"product")}
 
 function openModal(title,fields,onSave){modalTitle.textContent=title;modalFields.innerHTML="";fields.forEach(f=>{const l=document.createElement("label");l.textContent=f.label;const i=document.createElement("input");i.id=f.id;i.type="text";i.placeholder=f.placeholder||"";modalFields.append(l,i)});modalSaveBtn.onclick=onSave;modalBackdrop.classList.add("open")}
 function closeModal(){modalBackdrop.classList.remove("open");modalSaveBtn.onclick=null}
@@ -288,12 +421,13 @@ function openAddInput(fid){const f=draftCatalog.find(x=>x.id===fid);if(!f)return
 function makeBackupObject(){
   return {
     format:"FS25_CHECKLIST_BACKUP",
-    schemaVersion:1,
-    appVersion:"3.1.1",
+    schemaVersion:2,
+    appVersion:"3.2",
     exportedAt:new Date().toISOString(),
     catalog:clone(catalog),
     generalTasks:clone(generalTasks),
     dailyState:clone(dailyState),
+    autoState:clone(autoState),
     view:localStorage.getItem(VIEW_KEY)||"factory"
   };
 }
@@ -324,9 +458,9 @@ function validateBackup(obj){
 async function importBackupFile(file){
   try{
     const obj=JSON.parse(await file.text());validateBackup(obj);
-    catalog=clone(obj.catalog);generalTasks=clone(obj.generalTasks);dailyState=clone(obj.dailyState||{});
+    catalog=clone(obj.catalog);generalTasks=clone(obj.generalTasks);dailyState=clone(obj.dailyState||{});autoState=clone(obj.autoState||{});
     sortCatalog(catalog);ensureDailyKeys();
-    saveCatalog();saveGeneral();saveDaily();
+    saveCatalog();saveGeneral();saveDaily();saveAuto();
     if(obj.view==="product"||obj.view==="factory")localStorage.setItem(VIEW_KEY,obj.view);
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastImport:new Date().toISOString(),fileName:file.name}));
     completedExpanded=false;renderAll();setView(localStorage.getItem(VIEW_KEY)||"factory",false);updateBackupStatus();
@@ -337,7 +471,7 @@ function updateBackupStatus(){
   const meta=readJSON(BACKUP_META_KEY,{});
   if(meta.lastExport){const d=new Date(meta.lastExport);backupStatus.textContent=`Última copia exportada: ${d.toLocaleString("es-ES")}`;}
   else if(meta.lastImport){const d=new Date(meta.lastImport);backupStatus.textContent=`Última copia importada: ${d.toLocaleString("es-ES")}`;}
-  else backupStatus.textContent="La copia incluye fábricas, inputs, tareas generales y estado diario.";
+  else backupStatus.textContent="La copia incluye fábricas, inputs, tareas generales, reglas automáticas y estado diario.";
 }
 
 addGeneralTaskBtn.onclick=addGeneral;
@@ -346,7 +480,12 @@ factoryViewBtn.onclick=()=>{if(editing)saveEdit();setView("factory")};
 productViewBtn.onclick=()=>{if(editing)saveEdit();setView("product")};
 newFactoryBtn.onclick=openNewFactory;
 editBtn.onclick=()=>editing?saveEdit():beginEdit();
-resetBtn.onclick=()=>{if(editing)saveEdit();if(!confirm("¿Empezar un nuevo día?"))return;generalTasks=generalTasks.filter(t=>!t.done);saveGeneral();catalog.forEach(f=>f.tasks.forEach(t=>dailyState[t.id]=false));saveDaily();completedExpanded=false;renderAll();window.scrollTo({top:0,behavior:"smooth"})};
+resetBtn.onclick=()=>{if(editing)saveEdit();if(!confirm("¿Empezar un nuevo día?"))return;generalTasks=generalTasks.filter(t=>!t.done);saveGeneral();catalog.forEach(f=>f.tasks.forEach(t=>dailyState[t.id]=false));autoState={};saveDaily();saveAuto();completedExpanded=false;renderAll();window.scrollTo({top:0,behavior:"smooth"})};
+backupToggle.onclick=()=>{
+  backupExpanded=!backupExpanded;
+  backupToggle.classList.toggle("open",backupExpanded);
+  backupPanel.classList.toggle("open",backupExpanded);
+};
 modalCancelBtn.onclick=closeModal;modalBackdrop.onclick=e=>{if(e.target===modalBackdrop)closeModal()};
 exportBtn.onclick=exportBackup;
 importBtn.onclick=()=>importFile.click();
