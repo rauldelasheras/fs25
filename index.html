@@ -280,6 +280,31 @@
       line-height:1.35;
     }
 
+
+    /* V3.2.3 */
+    .pending-state{
+      background:#fde6c7 !important;
+      border-left:4px solid #e7a95b;
+    }
+    .pending-state .task-text{color:#5a3c19 !important}
+    .pending-note{
+      display:block;
+      margin-top:3px;
+      color:#9a641f;
+      font-size:11px;
+      font-weight:850;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+    .pending-state.priority,
+    .priority.pending-state{
+      background:#eadfff !important;
+      border-left:4px solid #aa86e8;
+    }
+    .pending-state.priority .task-text,
+    .priority.pending-state .task-text{
+      color:#382b4d !important;
+    }
 </style>
 </head>
 <body>
@@ -329,11 +354,11 @@
       <button id="exportBtn" class="sage" type="button">Exportar copia</button>
       <button id="importBtn" class="secondary" type="button">Importar copia</button>
     </div>
-    <div id="backupStatus" class="data-note">La copia incluye fábricas, inputs, tareas generales, prioridades, reglas automáticas y estado diario.</div>
+    <div id="backupStatus" class="data-note">La copia incluye fábricas, inputs, tareas generales, prioridades, pendientes, reglas automáticas y estado diario.</div>
     <input id="importFile" type="file" accept=".json,application/json">
   </section>
 
-  <div class="version-label">V3.2.2</div>
+  <div class="version-label">V3.3</div>
 </main>
 
 <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
@@ -356,9 +381,10 @@ const MIGRATION_KEY="fs25-migrated-v30";
 const BACKUP_META_KEY="fs25-backup-meta-v1";
 const AUTO_KEY="fs25-auto-v32";
 const PRIORITY_KEY="fs25-priority-v321";
+const PENDING_KEY="fs25-pending-v323";
 const initialCatalog=[{"id": "aserradero", "name": "Aserradero", "tasks": [{"id": "aserradero-madera", "name": "Madera / troncos"}]}, {"id": "azucarera", "name": "Azucarera", "tasks": [{"id": "azucarera-remolacha", "name": "Remolacha"}, {"id": "azucarera-sorgo", "name": "Sorgo"}]}, {"id": "beet-pulp", "name": "Beet Pulp", "tasks": [{"id": "beetpulp-diesel", "name": "Diésel"}, {"id": "beetpulp-remolacha", "name": "Remolacha"}]}, {"id": "bga", "name": "BGA", "tasks": [{"id": "bga-ensilaje", "name": "Ensilaje"}]}, {"id": "fabrica-semillas", "name": "Fábrica de semillas", "tasks": [{"id": "semillas-maiz", "name": "Maíz"}, {"id": "semillas-trigo", "name": "Trigo"}]}, {"id": "fabrica-oil-aceites", "name": "Fábrica Oil Aceites", "tasks": [{"id": "oil-colza", "name": "Colza"}, {"id": "oil-girasol", "name": "Girasol"}, {"id": "oil-maiz", "name": "Maíz"}, {"id": "oil-soja", "name": "Soja"}]}, {"id": "fermentador-pequeno", "name": "Fermentador pequeño", "tasks": [{"id": "fermentador-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "fermenter-stevie", "name": "Fermenter Stevie", "tasks": [{"id": "stevie-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "gallinas", "name": "Gallinas", "tasks": [{"id": "gallinas-huevos", "name": "Recoger huevos"}, {"id": "gallinas-cereal", "name": "Trigo, cebada o sorgo"}]}, {"id": "harinera", "name": "Harinera", "tasks": [{"id": "harinera-arroz-largo", "name": "Arroz de grano largo"}, {"id": "harinera-arroz-normal", "name": "Arroz normal"}, {"id": "harinera-trigo", "name": "Trigo"}]}, {"id": "heno", "name": "Heno", "tasks": [{"id": "heno-hierba", "name": "Hierba"}]}, {"id": "holzfaller", "name": "Holzfäller / Leñador", "tasks": [{"id": "holzfaller-diesel", "name": "Diésel"}]}, {"id": "greenhouse-fast", "name": "Invernadero Greenhouse Fast", "tasks": [{"id": "greenhouse-fast-herbicida", "name": "Herbicida"}]}, {"id": "invernaderos", "name": "Invernaderos", "tasks": [{"id": "invernaderos-miel", "name": "Recoger miel"}]}, {"id": "laboratorio", "name": "Laboratorio", "tasks": [{"id": "laboratorio-leche", "name": "Leche"}]}, {"id": "lime-salt-herbicide", "name": "Lime Salt Herbicide", "tasks": [{"id": "lime-salt-piedras", "name": "Piedras"}]}, {"id": "malteria", "name": "Maltería", "tasks": [{"id": "malteria-cebada", "name": "Cebada"}, {"id": "malteria-sorgo", "name": "Sorgo"}, {"id": "malteria-trigo", "name": "Trigo"}]}, {"id": "ovejas", "name": "Ovejas", "tasks": [{"id": "ovejas-lana", "name": "Recoger lana"}]}, {"id": "taller", "name": "Taller", "tasks": [{"id": "taller-diesel", "name": "Diésel"}]}, {"id": "vacas", "name": "Vacas", "tasks": [{"id": "vacas-mineral", "name": "Alimento mineral"}, {"id": "vacas-ensilado", "name": "Ensilado"}, {"id": "vacas-heno", "name": "Heno"}, {"id": "vacas-paja", "name": "Paja"}, {"id": "vacas-paja-suelo", "name": "Paja para suelo de vacas"}, {"id": "vacas-estiercol", "name": "Recoger estiércol"}, {"id": "vacas-leche", "name": "Recoger leche"}, {"id": "vacas-purin", "name": "Recoger purín"}]}, {"id": "ventas", "name": "Ventas", "tasks": [{"id": "venta-lana", "name": "Lana de ovejas"}, {"id": "venta-miel", "name": "Miel de invernaderos"}, {"id": "venta-remolacha-cortada", "name": "Remolacha cortada de fábrica"}, {"id": "venta-virutas", "name": "Virutas de HOF o bosques"}]}];
 
-let catalog=[],dailyState={},generalTasks=[],autoState={},priorityState={},editing=false,draftCatalog=null,completedExpanded=false,backupExpanded=false;
+let catalog=[],dailyState={},generalTasks=[],autoState={},priorityState={},pendingState={},editing=false,draftCatalog=null,completedExpanded=false,backupExpanded=false;
 
 const $=id=>document.getElementById(id);
 const factoryView=$("factoryView"),productView=$("productView"),factoryViewBtn=$("factoryViewBtn"),
@@ -377,6 +403,7 @@ function saveDaily(){localStorage.setItem(DAILY_KEY,JSON.stringify(dailyState))}
 function saveGeneral(){localStorage.setItem(GENERAL_KEY,JSON.stringify(generalTasks))}
 function saveAuto(){localStorage.setItem(AUTO_KEY,JSON.stringify(autoState))}
 function savePriority(){localStorage.setItem(PRIORITY_KEY,JSON.stringify(priorityState))}
+function savePending(){localStorage.setItem(PENDING_KEY,JSON.stringify(pendingState))}
 function taskExists(id){return catalog.some(f=>f.tasks.some(t=>t.id===id))}
 function findTaskByNames(factoryName,taskName){
   const f=catalog.find(x=>x.name.trim().toLowerCase()===factoryName.trim().toLowerCase());
@@ -420,12 +447,14 @@ function loadData(){
   generalTasks=readJSON(GENERAL_KEY,[]);
   autoState=readJSON(AUTO_KEY,{});
   priorityState=readJSON(PRIORITY_KEY,{});
+  pendingState=readJSON(PENDING_KEY,{});
   if(!Array.isArray(catalog)||!catalog.length)catalog=clone(initialCatalog);
   if(!Array.isArray(generalTasks))generalTasks=[];
   sortCatalog(catalog);ensureDailyKeys();
   if(!autoState||typeof autoState!=="object")autoState={};
   if(!priorityState||typeof priorityState!=="object")priorityState={};
-  saveCatalog();saveDaily();saveAuto();savePriority();
+  if(!pendingState||typeof pendingState!=="object")pendingState={};
+  saveCatalog();saveDaily();saveAuto();savePriority();savePending();
   const ruleIds=resolveRuleIds();
   if(ruleIds.aserradero&&dailyState[ruleIds.aserradero])applyBusinessRules(ruleIds.aserradero,"init");
   updateBackupStatus();
@@ -569,7 +598,7 @@ function makeCheckTask(task,factoryName){
   del.onclick=()=>deleteFactoryInput(task.id);
 
   const row=document.createElement("div");
-  row.className="task"+(dailyState[task.id]?" done":"")+(priorityState[task.id]?" priority":"");
+  row.className="task"+(dailyState[task.id]?" done":"")+(pendingState[task.id]?" pending-state":"")+(priorityState[task.id]?" priority":"");
 
   const label=document.createElement("label");
   label.className="task-label";
@@ -595,6 +624,13 @@ function makeCheckTask(task,factoryName){
     text.appendChild(pnote);
   }
 
+  if(pendingState[task.id]){
+    const pend=document.createElement("span");
+    pend.className="pending-note";
+    pend.textContent="Pendiente";
+    text.appendChild(pend);
+  }
+
   if(autoState[task.id]){
     const note=document.createElement("span");
     note.className="auto-note";
@@ -604,9 +640,10 @@ function makeCheckTask(task,factoryName){
 
   input.onchange=()=>{
     dailyState[task.id]=input.checked;
+    if(input.checked)delete pendingState[task.id];
     if(autoState[task.id])delete autoState[task.id];
     applyBusinessRules(task.id,"manual");
-    saveDaily();saveAuto();renderAll();
+    saveDaily();saveAuto();savePending();renderAll();
   };
 
   label.append(input,mark,text);
@@ -636,8 +673,9 @@ function deleteFactoryInput(taskId){
   delete dailyState[taskId];
   delete autoState[taskId];
   delete priorityState[taskId];
+  delete pendingState[taskId];
 
-  saveCatalog();saveDaily();saveAuto();savePriority();
+  saveCatalog();saveDaily();saveAuto();savePriority();savePending();
 
   if(found){
     sortCatalog(catalog);
@@ -649,10 +687,11 @@ function markFactoryComplete(id){
   const f=catalog.find(x=>x.id===id);if(!f)return;
   f.tasks.forEach(t=>{
     dailyState[t.id]=true;
+    delete pendingState[t.id];
     if(autoState[t.id])delete autoState[t.id];
     applyBusinessRules(t.id,"manual");
   });
-  saveDaily();saveAuto();renderAll();
+  saveDaily();saveAuto();savePending();renderAll();
 }
 function renderFactoryView(){
   factoryView.innerHTML="";
@@ -719,7 +758,8 @@ function renderEditFactoryView(){
         delete dailyState[t.id];
         delete autoState[t.id];
         delete priorityState[t.id];
-        saveDaily();saveAuto();savePriority();
+        delete pendingState[t.id];
+        saveDaily();saveAuto();savePriority();savePending();
         renderFactoryView();
       };
 
@@ -761,6 +801,9 @@ function saveEdit(){
     const isGeneral=generalTasks.some(t=>t.id===id);
     if(!valid.has(id)&&!isGeneral)delete priorityState[id];
   });
+  Object.keys(pendingState).forEach(id=>{
+    if(!valid.has(id))delete pendingState[id];
+  });
 
   editing=false;
   draftCatalog=null;
@@ -770,7 +813,7 @@ function saveEdit(){
   editBtn.classList.add("secondary");
 
   ensureDailyKeys();
-  saveCatalog();saveDaily();saveAuto();savePriority();
+  saveCatalog();saveDaily();saveAuto();savePriority();savePending();
   renderAll();
 }
 
@@ -910,8 +953,11 @@ function openFactoryEditor(factoryId){
       const isGeneral=generalTasks.some(t=>t.id===id);
       if(!valid.has(id)&&!isGeneral)delete priorityState[id];
     });
+    Object.keys(pendingState).forEach(id=>{
+      if(!valid.has(id))delete pendingState[id];
+    });
 
-    saveCatalog();saveDaily();saveAuto();savePriority();
+    saveCatalog();saveDaily();saveAuto();savePriority();savePending();
     closeModal();
     renderAll();
   };
@@ -935,14 +981,15 @@ function openAddInput(fid){
 function makeBackupObject(){
   return {
     format:"FS25_CHECKLIST_BACKUP",
-    schemaVersion:3,
-    appVersion:"3.2.2",
+    schemaVersion:4,
+    appVersion:"3.3",
     exportedAt:new Date().toISOString(),
     catalog:clone(catalog),
     generalTasks:clone(generalTasks),
     dailyState:clone(dailyState),
     autoState:clone(autoState),
     priorityState:clone(priorityState),
+    pendingState:clone(pendingState),
     view:localStorage.getItem(VIEW_KEY)||"factory"
   };
 }
@@ -973,9 +1020,9 @@ function validateBackup(obj){
 async function importBackupFile(file){
   try{
     const obj=JSON.parse(await file.text());validateBackup(obj);
-    catalog=clone(obj.catalog);generalTasks=clone(obj.generalTasks);dailyState=clone(obj.dailyState||{});autoState=clone(obj.autoState||{});priorityState=clone(obj.priorityState||{});
+    catalog=clone(obj.catalog);generalTasks=clone(obj.generalTasks);dailyState=clone(obj.dailyState||{});autoState=clone(obj.autoState||{});priorityState=clone(obj.priorityState||{});pendingState=clone(obj.pendingState||{});
     sortCatalog(catalog);ensureDailyKeys();
-    saveCatalog();saveGeneral();saveDaily();saveAuto();savePriority();
+    saveCatalog();saveGeneral();saveDaily();saveAuto();savePriority();savePending();
     if(obj.view==="product"||obj.view==="factory")localStorage.setItem(VIEW_KEY,obj.view);
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastImport:new Date().toISOString(),fileName:file.name}));
     completedExpanded=false;renderAll();setView(localStorage.getItem(VIEW_KEY)||"factory",false);updateBackupStatus();
@@ -986,7 +1033,7 @@ function updateBackupStatus(){
   const meta=readJSON(BACKUP_META_KEY,{});
   if(meta.lastExport){const d=new Date(meta.lastExport);backupStatus.textContent=`Última copia exportada: ${d.toLocaleString("es-ES")}`;}
   else if(meta.lastImport){const d=new Date(meta.lastImport);backupStatus.textContent=`Última copia importada: ${d.toLocaleString("es-ES")}`;}
-  else backupStatus.textContent="La copia incluye fábricas, inputs, tareas generales, prioridades, reglas automáticas y estado diario.";
+  else backupStatus.textContent="La copia incluye fábricas, inputs, tareas generales, prioridades, pendientes, reglas automáticas y estado diario.";
 }
 
 addGeneralTaskBtn.onclick=addGeneral;
@@ -997,16 +1044,25 @@ newFactoryBtn.onclick=openNewFactory;
 editBtn.onclick=()=>editing?saveEdit():beginEdit();
 resetBtn.onclick=()=>{
   if(editing)saveEdit();
-  if(!confirm("¿Empezar un nuevo día?"))return;
 
   const removedGeneralIds=generalTasks.filter(t=>t.done).map(t=>t.id);
   generalTasks=generalTasks.filter(t=>!t.done);
   removedGeneralIds.forEach(id=>delete priorityState[id]);
   saveGeneral();savePriority();
 
-  catalog.forEach(f=>f.tasks.forEach(t=>dailyState[t.id]=false));
+  catalog.forEach(f=>{
+    f.tasks.forEach(t=>{
+      if(dailyState[t.id]){
+        delete pendingState[t.id];
+      }else{
+        pendingState[t.id]=true;
+      }
+      dailyState[t.id]=false;
+    });
+  });
+
   autoState={};
-  saveDaily();saveAuto();
+  saveDaily();saveAuto();savePending();
 
   completedExpanded=false;
   renderAll();
