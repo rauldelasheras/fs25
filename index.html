@@ -1,1085 +1,308 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="FS25 Checklist">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#f5f5f7">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icon-180.png">
-  <title>FS25 · Checklist diario</title>
-  <style>
-    :root{--bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;
-      --accent:#0a7f3f;--accent-soft:#e9f7ef;--sage:#6f736c;--sage-soft:#eef0ec;
-      --danger:#d6453d;--shadow:0 2px 14px rgba(0,0,0,.06)}
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
-    body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(100px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
-    .app{width:min(760px,100%);margin:0 auto} header{margin:6px 2px 16px}
-    h1{margin:0;font-size:clamp(28px,7vw,40px);line-height:1.05;letter-spacing:-.03em}
-    button,input{font:inherit} button{border:0;border-radius:14px;background:var(--text);color:#fff;min-height:44px;padding:10px 14px;font-weight:750;cursor:pointer}
-    button:active{transform:scale(.98)} button.secondary{background:#e9e9ec;color:var(--text)} button.sage{background:var(--sage);color:#fff}
-    .panel{background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
-    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 12px}
-    .panel-title{margin:0;font-size:19px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
-    .general-add{display:flex;gap:8px;padding:0 14px 14px}
-    .general-add input,.modal input,.edit-input{width:100%;min-width:0;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--text);min-height:44px;padding:10px 12px;outline:none;font-size:16px}
-    .general-empty{color:var(--muted);padding:0 18px 16px;font-size:14px}
-    .status{position:sticky;top:max(8px,env(safe-area-inset-top));z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin:14px 0;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(0,0,0,.05);border-radius:18px;box-shadow:var(--shadow)}
-    .status-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;font-weight:700}
-    .counter{font-size:22px;line-height:1.1;font-weight:800}
-    .view-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:12px;border-radius:14px;background:#e9e9ec}
-    .view-switch button{min-height:42px;padding:8px 10px;border-radius:11px;background:transparent;color:var(--muted)}
-    .view-switch button.active{background:#fff;color:var(--text);box-shadow:0 1px 5px rgba(0,0,0,.08)}
-    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px}
-    .toolbar-left,.toolbar-right{display:flex;gap:8px;align-items:center}
-    body.editing #editBtn{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:90;min-width:110px;min-height:52px;box-shadow:0 10px 28px rgba(0,0,0,.22);background:var(--sage);color:#fff}
-    .view{display:none} .view.active{display:block}
-    .group-label{margin:20px 4px 10px;color:var(--muted);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-    .completed-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 10px;padding:12px 14px;border-radius:14px;background:#e9e9ec;color:var(--text);min-height:46px}
-    .completed-toggle-left{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
-    .chevron{display:inline-block;transition:transform .18s ease;font-size:16px;line-height:1} .completed-toggle.open .chevron{transform:rotate(90deg)}
-    .completed-count{color:var(--muted);font-size:13px;font-weight:800} .completed-list{display:none} .completed-list.open{display:block}
-    .factory-card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
-    .factory-card.completed{background:var(--sage);color:#fff}
-    .factory-card.completed .factory-sub,.factory-card.completed .pending-badge{color:rgba(255,255,255,.83)}
-    .factory-card.completed .task{border-top-color:rgba(255,255,255,.16)} .factory-card.completed .task.done{background:rgba(255,255,255,.08)} .factory-card.completed .task.done .task-text{color:rgba(255,255,255,.92)}
-    .factory-head{display:flex;align-items:center;gap:10px;padding:15px 16px 11px}
-    .factory-title-wrap{flex:1;min-width:0} .factory-title{font-size:18px;line-height:1.2;font-weight:800;letter-spacing:-.01em}
-    .factory-sub{margin-top:3px;color:var(--muted);font-size:13px;font-weight:700}
-    .factory-head-actions{display:flex;align-items:center;gap:8px} .pending-badge{color:var(--muted);font-size:13px;font-weight:800;white-space:nowrap}
-    .complete-factory-btn{width:40px;height:40px;min-width:40px;min-height:40px;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--sage);color:#fff;font-size:20px;font-weight:900}
-    .factory-card.completed .complete-factory-btn{background:rgba(255,255,255,.18);color:#fff}
-    .task{position:relative;display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;border-top:1px solid var(--line);background:transparent;user-select:none;-webkit-user-select:none}
-    .task-label{flex:1;min-width:0;display:flex;align-items:center;gap:14px;cursor:pointer}
-    .task input[type="checkbox"]{position:absolute;opacity:0;pointer-events:none}
-    .checkmark{width:30px;height:30px;flex:0 0 30px;border-radius:9px;border:2px solid #b8b8bd;display:grid;place-items:center;background:#fff}
-    .checkmark::after{content:"";width:8px;height:14px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) scale(0);margin-top:-2px}
-    .task input:checked + .checkmark{background:var(--accent);border-color:var(--accent)} .task input:checked + .checkmark::after{transform:rotate(45deg) scale(1)}
-    .task-text{flex:1;min-width:0;font-size:17px;line-height:1.3;font-weight:600} .task.done{background:var(--accent-soft)} .task.done .task-text{color:var(--muted);text-decoration:line-through}
-    .general-row.done{background:#eff1ed} .general-delete{display:none;background:transparent;color:var(--danger);min-height:34px;padding:5px 3px;font-size:13px}
-    .general-row.done .general-delete{display:inline-flex;align-items:center}
-    .completed-divider{padding:9px 16px 5px;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;border-top:1px solid var(--line)}
-    .swipe-wrap{position:relative;overflow:hidden;background:var(--danger);border-top:1px solid var(--line)} .swipe-wrap:first-child{border-top:0}
-    .swipe-delete{position:absolute;right:0;top:0;bottom:0;width:92px;display:grid;place-items:center;color:#fff;font-size:14px;font-weight:800}
-    .swipe-wrap .general-row{position:relative;z-index:2;border-top:0;background:#fff;transition:transform .18s ease} .swipe-wrap .general-row.done{background:#eff1ed} .swipe-wrap .general-row.revealed{transform:translateX(-92px)}
-    .product-card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px} .product-head{padding:16px 18px 10px;font-size:18px;font-weight:800}
-    .empty{padding:18px;color:var(--muted);background:var(--card);border-radius:16px;box-shadow:var(--shadow)}
-    .all-done{display:none;margin-bottom:16px;padding:18px;text-align:center;border-radius:18px;background:#eff1ed;color:var(--sage);font-weight:800} .all-done.visible{display:block}
-    body.editing .factory-card{background:#fff;color:var(--text)} body.editing .factory-card.completed .task{border-top-color:var(--line)}
-    .edit-input{font-weight:600;min-height:40px;padding:7px 9px} .factory-name-input{border:2px solid var(--sage);background:var(--sage-soft);font-weight:850;color:var(--text)}
-    .factory-edit-label{display:block;margin-bottom:5px;color:var(--sage);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
-    .task-name-input{border:1px solid var(--line);background:#fff;font-weight:600} .add-input-row{display:none;padding:10px 14px 14px;border-top:1px solid var(--line)} body.editing .add-input-row{display:block}
-    .add-input-btn{width:100%;min-height:40px;background:#efeff2;color:var(--text);border-radius:12px}
-    .data-panel{padding:14px} .data-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px} .data-note{margin:10px 2px 0;color:var(--muted);font-size:12px;line-height:1.4}
-    .version-label{margin:28px 0 4px;text-align:center;color:#9a9aa0;font-size:11px;font-weight:700;letter-spacing:.04em}
-    .modal-backdrop{position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center;padding:20px max(14px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:rgba(0,0,0,.34)}
-    .modal-backdrop.open{display:flex} .modal{width:min(560px,100%);padding:18px;border-radius:22px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.22)} .modal h3{margin:0 0 14px;font-size:20px}
-    .modal label{display:block;margin:12px 0 6px;color:var(--muted);font-size:13px;font-weight:800} .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px} .modal-actions .cancel{background:#ededf0;color:var(--text)}
-    #importFile{display:none}
-    @media(min-width:700px){.modal-backdrop{align-items:center}}
-    @media(max-width:420px){.counter{font-size:20px}.status{padding:12px 13px}button{padding-inline:12px}.general-delete{display:none!important}.factory-head{align-items:flex-start}.data-buttons{grid-template-columns:1fr}}
-  
-    /* V3.2 */
-    .status-actions{
-      display:flex;
-      flex-direction:column;
-      gap:7px;
-      align-items:stretch;
-      min-width:116px;
-    }
-    .status-actions button{
-      width:100%;
-      min-height:40px;
-      padding:8px 12px;
-    }
-    #editBtn.editing-save{
-      background:var(--sage);
-      color:#fff;
-      box-shadow:0 6px 16px rgba(0,0,0,.14);
-    }
-    .backup-toggle{
-      width:100%;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-top:20px;
-      padding:14px 16px;
-      border-radius:20px;
-      background:#fff;
-      color:var(--text);
-      box-shadow:var(--shadow);
-    }
-    .backup-toggle-left{
-      display:flex;
-      align-items:center;
-      gap:9px;
-      font-weight:800;
-    }
-    .backup-toggle .chevron{font-size:17px}
-    .backup-toggle.open .chevron{transform:rotate(90deg)}
-    .backup-panel{
-      display:none;
-      margin-top:8px;
-      padding:14px;
-      border-radius:20px;
-      background:#fff;
-      box-shadow:var(--shadow);
-    }
-    .backup-panel.open{display:block}
-    .auto-note{
-      display:block;
-      margin-top:3px;
-      color:var(--sage);
-      font-size:11px;
-      font-weight:800;
-      text-transform:uppercase;
-      letter-spacing:.05em;
-    }
-    .factory-card.completed .auto-note{color:rgba(255,255,255,.82)}
-    @media(max-width:420px){
-      .status-actions{min-width:104px}
-    }
-
-  
-    /* V3.2.1 */
-    body.editing #editBtn{
-      width:auto !important;
-      min-width:116px;
-      right:max(16px,env(safe-area-inset-right));
-      bottom:max(18px,env(safe-area-inset-bottom));
-      z-index:120;
-    }
-
-    .priority{
-      background:#eadfff !important;
-      border-left:4px solid #aa86e8;
-    }
-    .priority .task-text{
-      color:#382b4d !important;
-    }
-    .priority-note{
-      display:block;
-      margin-top:3px;
-      color:#7654aa;
-      font-size:11px;
-      font-weight:850;
-      text-transform:uppercase;
-      letter-spacing:.05em;
-    }
-    .factory-card.completed .task.priority{
-      background:#eadfff !important;
-    }
-    .factory-card.completed .task.priority .task-text{
-      color:#382b4d !important;
-    }
-
-    .dual-swipe-wrap{
-      position:relative;
-      overflow:hidden;
-      border-top:1px solid var(--line);
-      background:transparent;
-    }
-    .dual-swipe-wrap:first-child{border-top:0}
-    .dual-swipe-wrap > .task{
-      border-top:0;
-      position:relative;
-      z-index:3;
-      transition:transform .18s ease;
-      background:var(--card);
-    }
-    .dual-swipe-wrap.delete-open > .task,
-    .dual-swipe-wrap.delete-open > .edit-swipe-content{
-      transform:translateX(-94px);
-    }
-    .swipe-delete-action{
-      position:absolute;
-      right:0;
-      top:0;
-      bottom:0;
-      width:94px;
-      z-index:1;
-      display:grid;
-      place-items:center;
-      border-radius:0;
-      background:var(--danger);
-      color:#fff;
-      font-size:14px;
-      font-weight:850;
-      opacity:0;
-      pointer-events:none;
-      transform:translateX(100%);
-      transition:opacity .16s ease, transform .18s ease;
-    }
-
-    .dual-swipe-wrap.delete-open .swipe-delete-action{
-      opacity:1;
-      pointer-events:auto;
-      transform:translateX(0);
-    }
-    .edit-swipe-content{
-      position:relative;
-      z-index:3;
-      background:#fff;
-      transition:transform .18s ease;
-    }
-    .priority-flash{
-      animation:priorityPulse .35s ease;
-    }
-    @keyframes priorityPulse{
-      0%{transform:translateX(0)}
-      45%{transform:translateX(12px)}
-      100%{transform:translateX(0)}
-    }
-
-    .factory-edit-pencil{
-      width:36px;
-      height:36px;
-      min-width:36px;
-      min-height:36px;
-      padding:0;
-      border-radius:11px;
-      display:grid;
-      place-items:center;
-      background:#efeff2;
-      color:var(--text);
-      font-size:17px;
-      line-height:1;
-    }
-
-    .factory-editor-list{
-      margin-top:12px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      overflow:hidden;
-    }
-    .factory-editor-input-row{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      min-height:56px;
-      padding:7px 10px;
-      background:#fff;
-    }
-    .factory-editor-input-row input{
-      margin:0;
-    }
-    .factory-editor-add{
-      width:100%;
-      margin-top:10px;
-      background:#efeff2;
-      color:var(--text);
-    }
-    .factory-editor-hint{
-      margin:8px 2px 0;
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.35;
-    }
-
-
-    /* V3.2.3 */
-    .pending-state{
-      background:#fde6c7 !important;
-      border-left:4px solid #e7a95b;
-    }
-    .pending-state .task-text{color:#5a3c19 !important}
-    .pending-note{
-      display:block;
-      margin-top:3px;
-      color:#9a641f;
-      font-size:11px;
-      font-weight:850;
-      text-transform:uppercase;
-      letter-spacing:.05em;
-    }
-    .pending-state.priority,
-    .priority.pending-state{
-      background:#eadfff !important;
-      border-left:4px solid #aa86e8;
-    }
-    .pending-state.priority .task-text,
-    .priority.pending-state .task-text{
-      color:#382b4d !important;
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FS25 Tareas">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>FS25 · Tareas</title>
+<style>
+:root{--bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;--sage:#6f736c;--sageSoft:#eef0ec;--purple:#eadfff;--purpleStrong:#aa86e8;--purpleText:#382b4d;--shadow:0 2px 14px rgba(0,0,0,.06)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
+body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(96px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.app{width:min(760px,100%);margin:auto}
+h1{margin:6px 2px 16px;font-size:clamp(30px,7vw,42px);letter-spacing:-.035em}
+button,input{font:inherit}
+button{border:0;border-radius:14px;background:var(--text);color:#fff;min-height:44px;padding:10px 14px;font-weight:750}
+button.secondary{background:#e9e9ec;color:var(--text)}
+button.sage{background:var(--sage)}
+.add{display:flex;gap:8px;margin-bottom:14px;padding:14px;border-radius:20px;background:#fff;box-shadow:var(--shadow)}
+.add input{width:100%;min-width:0;min-height:46px;padding:10px 13px;border:1px solid var(--line);border-radius:13px;font-size:16px}
+.status{position:sticky;top:max(8px,env(safe-area-inset-top));z-index:40;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 18px;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);box-shadow:var(--shadow)}
+.status-label{color:var(--muted);font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}
+.counter{margin-top:2px;font-size:22px;font-weight:850}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 4px 10px}
+.section-title{margin:0;color:var(--muted);font-size:13px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+.clear{min-height:36px;padding:7px 11px;border-radius:11px;background:#e9e9ec;color:var(--text);font-size:13px}
+.task-card{margin-bottom:10px;border-radius:18px;overflow:hidden;background:#fff;box-shadow:var(--shadow);touch-action:pan-y}
+.task-content{display:flex;align-items:center;gap:12px;min-height:64px;padding:13px 16px;background:#fff;transition:transform .15s ease,background .15s ease;user-select:none}
+.task-card.priority .task-content{background:var(--purple);border-left:4px solid var(--purpleStrong);color:var(--purpleText)}
+.task-card.completed .task-content{background:var(--sageSoft);color:var(--muted)}
+.task-card.completed.priority .task-content{background:var(--purple);color:var(--purpleText)}
+.check{width:30px;height:30px;flex:0 0 30px;border:2px solid #b8b8bd;border-radius:9px;background:#fff;display:grid;place-items:center}
+.check:after{content:"";width:8px;height:14px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) scale(0);margin-top:-2px}
+.completed .check{border-color:var(--sage);background:var(--sage)}
+.completed .check:after{transform:rotate(45deg) scale(1)}
+.textwrap{flex:1;min-width:0}.text{font-size:17px;font-weight:650;line-height:1.3;word-break:break-word}.completed .text{text-decoration:line-through}
+.priority-note{margin-top:4px;color:#7654aa;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
+.order{display:none;gap:6px}.editing .order{display:flex}.editing .check,.editing .priority-note{display:none}.editing .add{display:none}
+.order button{width:40px;height:40px;min-width:40px;min-height:40px;padding:0;border-radius:12px;background:#efeff2;color:var(--text);font-size:19px}
+.order button:disabled{opacity:.28}
+.help{display:none;margin:-4px 4px 12px;color:var(--muted);font-size:13px}.editing .help{display:block}
+.empty{padding:20px;border-radius:18px;background:#fff;color:var(--muted);text-align:center;box-shadow:var(--shadow)}
+.backup-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding:14px 16px;border-radius:18px;background:#fff;color:var(--text);box-shadow:var(--shadow)}
+.backup-panel{display:none;margin-top:8px;padding:14px;border-radius:18px;background:#fff;box-shadow:var(--shadow)}.backup-panel.open{display:block}
+.backup-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.note{margin:10px 2px 0;color:var(--muted);font-size:12px;line-height:1.4}
+#file{display:none}.version{margin:28px 0 4px;text-align:center;color:#9a9aa0;font-size:11px;font-weight:700}
+@media(max-width:480px){.status{padding:12px 13px}.counter{font-size:20px}.backup-buttons{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main class="app">
-  <header><h1>FS25 · Checklist diario</h1></header>
+<h1>FS25 · Tareas</h1>
 
-  <section class="panel">
-    <div class="panel-head"><h2 class="panel-title">Tareas generales</h2></div>
-    <div class="general-add">
-      <input id="generalTaskInput" type="text" placeholder="Añadir tarea general" autocomplete="off">
-      <button id="addGeneralTaskBtn" type="button">Añadir</button>
-    </div>
-    <div id="generalList"></div>
-    <div id="generalEmpty" class="general-empty">No hay tareas generales.</div>
-  </section>
+<section class="add">
+<input id="newTask" placeholder="Añadir nueva tarea" autocomplete="off">
+<button id="addBtn">Añadir</button>
+</section>
 
-  <section class="status">
-    <div>
-      <div class="status-label">Estado del día</div>
-      <div id="counter" class="counter">0 pendientes</div>
-    </div>
-    <div class="status-actions">
-      <button id="resetBtn" type="button">Nuevo día</button>
-      <button id="editBtn" class="secondary" type="button">Editar</button>
-    </div>
-  </section>
+<section class="status">
+<div><div class="status-label">Estado</div><div id="counter" class="counter">0 tareas pendientes</div></div>
+<button id="editBtn" class="secondary">Editar</button>
+</section>
 
-  <nav class="view-switch">
-    <button id="factoryViewBtn" class="active" type="button">Por fábrica</button>
-    <button id="productViewBtn" type="button">Por producto</button>
-  </nav>
+<div class="help">Usa ↑ y ↓ para ordenar las tareas pendientes. El orden se guarda automáticamente.</div>
 
-  <div class="toolbar">
-    <div><button id="newFactoryBtn" class="sage" type="button">＋ Nueva fábrica</button></div>
-  </div>
+<section>
+<div class="section-head"><h2 class="section-title">Pendientes</h2></div>
+<div id="pending"></div>
+</section>
 
-  <div id="allDone" class="all-done">Todas las fábricas están revisadas.</div>
-  <div id="factoryView" class="view active"></div>
-  <div id="productView" class="view"></div>
+<section id="doneSection">
+<div class="section-head"><h2 class="section-title">Completadas</h2><button id="clearBtn" class="clear">Limpiar</button></div>
+<div id="done"></div>
+</section>
 
-  <button id="backupToggle" class="backup-toggle" type="button">
-    <span class="backup-toggle-left"><span class="chevron">›</span><span>Copia de seguridad</span></span>
-    <span style="color:var(--muted);font-size:13px">JSON</span>
-  </button>
-  <section id="backupPanel" class="backup-panel">
-    <div class="data-buttons">
-      <button id="exportBtn" class="sage" type="button">Exportar copia</button>
-      <button id="importBtn" class="secondary" type="button">Importar copia</button>
-    </div>
-    <div id="backupStatus" class="data-note">La copia incluye fábricas, inputs, tareas generales, prioridades, pendientes, reglas automáticas y estado diario.</div>
-    <input id="importFile" type="file" accept=".json,application/json">
-  </section>
+<button id="backupToggle" class="backup-toggle"><span>› &nbsp; Copia de seguridad</span><span style="color:var(--muted);font-size:13px">JSON</span></button>
+<section id="backupPanel" class="backup-panel">
+<div class="backup-buttons">
+<button id="exportBtn" class="sage">Exportar copia</button>
+<button id="importBtn" class="secondary">Importar copia</button>
+</div>
+<div id="backupStatus" class="note">Guarda tareas, orden, prioridad y conserva también los datos industriales de la V3.3 como datos legacy.</div>
+<input id="file" type="file" accept=".json,application/json">
+</section>
 
-  <div class="version-label">V3.3</div>
+<div class="version">V4.0</div>
 </main>
 
-<div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
-  <div class="modal">
-    <h3 id="modalTitle">Nueva fábrica</h3>
-    <div id="modalFields"></div>
-    <div class="modal-actions">
-      <button id="modalCancelBtn" class="cancel" type="button">Cancelar</button>
-      <button id="modalSaveBtn" type="button">Guardar</button>
-    </div>
-  </div>
-</div>
-
 <script>
-const CATALOG_KEY="fs25-catalog-v30";
-const DAILY_KEY="fs25-daily-v30";
-const GENERAL_KEY="fs25-general-v30";
-const VIEW_KEY="fs25-view-v30";
-const MIGRATION_KEY="fs25-migrated-v30";
-const BACKUP_META_KEY="fs25-backup-meta-v1";
-const AUTO_KEY="fs25-auto-v32";
+const TASKS_KEY="fs25-general-v30";
 const PRIORITY_KEY="fs25-priority-v321";
-const PENDING_KEY="fs25-pending-v323";
-const initialCatalog=[{"id": "aserradero", "name": "Aserradero", "tasks": [{"id": "aserradero-madera", "name": "Madera / troncos"}]}, {"id": "azucarera", "name": "Azucarera", "tasks": [{"id": "azucarera-remolacha", "name": "Remolacha"}, {"id": "azucarera-sorgo", "name": "Sorgo"}]}, {"id": "beet-pulp", "name": "Beet Pulp", "tasks": [{"id": "beetpulp-diesel", "name": "Diésel"}, {"id": "beetpulp-remolacha", "name": "Remolacha"}]}, {"id": "bga", "name": "BGA", "tasks": [{"id": "bga-ensilaje", "name": "Ensilaje"}]}, {"id": "fabrica-semillas", "name": "Fábrica de semillas", "tasks": [{"id": "semillas-maiz", "name": "Maíz"}, {"id": "semillas-trigo", "name": "Trigo"}]}, {"id": "fabrica-oil-aceites", "name": "Fábrica Oil Aceites", "tasks": [{"id": "oil-colza", "name": "Colza"}, {"id": "oil-girasol", "name": "Girasol"}, {"id": "oil-maiz", "name": "Maíz"}, {"id": "oil-soja", "name": "Soja"}]}, {"id": "fermentador-pequeno", "name": "Fermentador pequeño", "tasks": [{"id": "fermentador-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "fermenter-stevie", "name": "Fermenter Stevie", "tasks": [{"id": "stevie-hierba-paja-fina", "name": "Hierba, Paja Fina"}]}, {"id": "gallinas", "name": "Gallinas", "tasks": [{"id": "gallinas-huevos", "name": "Recoger huevos"}, {"id": "gallinas-cereal", "name": "Trigo, cebada o sorgo"}]}, {"id": "harinera", "name": "Harinera", "tasks": [{"id": "harinera-arroz-largo", "name": "Arroz de grano largo"}, {"id": "harinera-arroz-normal", "name": "Arroz normal"}, {"id": "harinera-trigo", "name": "Trigo"}]}, {"id": "heno", "name": "Heno", "tasks": [{"id": "heno-hierba", "name": "Hierba"}]}, {"id": "holzfaller", "name": "Holzfäller / Leñador", "tasks": [{"id": "holzfaller-diesel", "name": "Diésel"}]}, {"id": "greenhouse-fast", "name": "Invernadero Greenhouse Fast", "tasks": [{"id": "greenhouse-fast-herbicida", "name": "Herbicida"}]}, {"id": "invernaderos", "name": "Invernaderos", "tasks": [{"id": "invernaderos-miel", "name": "Recoger miel"}]}, {"id": "laboratorio", "name": "Laboratorio", "tasks": [{"id": "laboratorio-leche", "name": "Leche"}]}, {"id": "lime-salt-herbicide", "name": "Lime Salt Herbicide", "tasks": [{"id": "lime-salt-piedras", "name": "Piedras"}]}, {"id": "malteria", "name": "Maltería", "tasks": [{"id": "malteria-cebada", "name": "Cebada"}, {"id": "malteria-sorgo", "name": "Sorgo"}, {"id": "malteria-trigo", "name": "Trigo"}]}, {"id": "ovejas", "name": "Ovejas", "tasks": [{"id": "ovejas-lana", "name": "Recoger lana"}]}, {"id": "taller", "name": "Taller", "tasks": [{"id": "taller-diesel", "name": "Diésel"}]}, {"id": "vacas", "name": "Vacas", "tasks": [{"id": "vacas-mineral", "name": "Alimento mineral"}, {"id": "vacas-ensilado", "name": "Ensilado"}, {"id": "vacas-heno", "name": "Heno"}, {"id": "vacas-paja", "name": "Paja"}, {"id": "vacas-paja-suelo", "name": "Paja para suelo de vacas"}, {"id": "vacas-estiercol", "name": "Recoger estiércol"}, {"id": "vacas-leche", "name": "Recoger leche"}, {"id": "vacas-purin", "name": "Recoger purín"}]}, {"id": "ventas", "name": "Ventas", "tasks": [{"id": "venta-lana", "name": "Lana de ovejas"}, {"id": "venta-miel", "name": "Miel de invernaderos"}, {"id": "venta-remolacha-cortada", "name": "Remolacha cortada de fábrica"}, {"id": "venta-virutas", "name": "Virutas de HOF o bosques"}]}];
+const BACKUP_META_KEY="fs25-backup-meta-v1";
+const LEGACY_KEYS={catalog:"fs25-catalog-v30",dailyState:"fs25-daily-v30",view:"fs25-view-v30",autoState:"fs25-auto-v32",pendingState:"fs25-pending-v323"};
 
-let catalog=[],dailyState={},generalTasks=[],autoState={},priorityState={},pendingState={},editing=false,draftCatalog=null,completedExpanded=false,backupExpanded=false;
-
+let tasks=[],priorityState={},editing=false,backupOpen=false,gesture=false;
 const $=id=>document.getElementById(id);
-const factoryView=$("factoryView"),productView=$("productView"),factoryViewBtn=$("factoryViewBtn"),
-productViewBtn=$("productViewBtn"),newFactoryBtn=$("newFactoryBtn"),editBtn=$("editBtn"),
-resetBtn=$("resetBtn"),counter=$("counter"),allDone=$("allDone"),generalTaskInput=$("generalTaskInput"),
-addGeneralTaskBtn=$("addGeneralTaskBtn"),generalList=$("generalList"),generalEmpty=$("generalEmpty"),
-modalBackdrop=$("modalBackdrop"),modalTitle=$("modalTitle"),modalFields=$("modalFields"),
-modalCancelBtn=$("modalCancelBtn"),modalSaveBtn=$("modalSaveBtn"),exportBtn=$("exportBtn"),
-importBtn=$("importBtn"),importFile=$("importFile"),backupStatus=$("backupStatus"),backupToggle=$("backupToggle"),backupPanel=$("backupPanel");
 
+function readJSON(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f}catch(e){return f}}
 function clone(v){return JSON.parse(JSON.stringify(v))}
-function uid(prefix){return prefix+"-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8)}
-function readJSON(key,fallback){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(e){return fallback}}
-function saveCatalog(){localStorage.setItem(CATALOG_KEY,JSON.stringify(catalog))}
-function saveDaily(){localStorage.setItem(DAILY_KEY,JSON.stringify(dailyState))}
-function saveGeneral(){localStorage.setItem(GENERAL_KEY,JSON.stringify(generalTasks))}
-function saveAuto(){localStorage.setItem(AUTO_KEY,JSON.stringify(autoState))}
-function savePriority(){localStorage.setItem(PRIORITY_KEY,JSON.stringify(priorityState))}
-function savePending(){localStorage.setItem(PENDING_KEY,JSON.stringify(pendingState))}
-function taskExists(id){return catalog.some(f=>f.tasks.some(t=>t.id===id))}
-function findTaskByNames(factoryName,taskName){
-  const f=catalog.find(x=>x.name.trim().toLowerCase()===factoryName.trim().toLowerCase());
-  return f?.tasks.find(t=>t.name.trim().toLowerCase()===taskName.trim().toLowerCase())||null;
-}
-function resolveRuleIds(){
-  const aserradero=taskExists("aserradero-madera")?"aserradero-madera":findTaskByNames("Aserradero","Madera / troncos")?.id;
-  const lenador=taskExists("holzfaller-diesel")?"holzfaller-diesel":findTaskByNames("Holzfäller / Leñador","Diésel")?.id;
-  return {aserradero,lenador};
-}
-function applyBusinessRules(changedTaskId,source="manual"){
-  const ids=resolveRuleIds();
-  if(!ids.aserradero||!ids.lenador)return;
+function uid(){return "task-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8)}
+function save(){localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));localStorage.setItem(PRIORITY_KEY,JSON.stringify(priorityState))}
+function normalize(a){return Array.isArray(a)?a.filter(x=>x&&typeof x.text==="string"&&x.text.trim()).map(x=>({id:x.id||uid(),text:x.text.trim(),done:!!x.done})):[]}
 
-  if(changedTaskId===ids.aserradero){
-    if(dailyState[ids.aserradero]){
-      if(!dailyState[ids.lenador]){
-        dailyState[ids.lenador]=true;
-        autoState[ids.lenador]="aserradero-madera";
-      }
-    }else if(autoState[ids.lenador]==="aserradero-madera"){
-      dailyState[ids.lenador]=false;
-      delete autoState[ids.lenador];
-    }
-  }
-
-  if(changedTaskId===ids.lenador && source==="manual"){
-    delete autoState[ids.lenador];
-  }
-
-  saveDaily();
-  saveAuto();
-}
-
-function alphaCompare(a,b){return a.localeCompare(b,"es",{sensitivity:"base",numeric:true})}
-function sortCatalog(target){target.sort((a,b)=>alphaCompare(a.name,b.name));target.forEach(f=>f.tasks.sort((a,b)=>alphaCompare(a.name,b.name)));return target}
-function ensureDailyKeys(){catalog.forEach(f=>f.tasks.forEach(t=>{if(typeof dailyState[t.id]!=="boolean")dailyState[t.id]=false}))}
-function loadData(){
-  catalog=readJSON(CATALOG_KEY,clone(initialCatalog));
-  dailyState=readJSON(DAILY_KEY,{});
-  generalTasks=readJSON(GENERAL_KEY,[]);
-  autoState=readJSON(AUTO_KEY,{});
+function load(){
+  tasks=normalize(readJSON(TASKS_KEY,[]));
   priorityState=readJSON(PRIORITY_KEY,{});
-  pendingState=readJSON(PENDING_KEY,{});
-  if(!Array.isArray(catalog)||!catalog.length)catalog=clone(initialCatalog);
-  if(!Array.isArray(generalTasks))generalTasks=[];
-  sortCatalog(catalog);ensureDailyKeys();
-  if(!autoState||typeof autoState!=="object")autoState={};
   if(!priorityState||typeof priorityState!=="object")priorityState={};
-  if(!pendingState||typeof pendingState!=="object")pendingState={};
-  saveCatalog();saveDaily();saveAuto();savePriority();savePending();
-  const ruleIds=resolveRuleIds();
-  if(ruleIds.aserradero&&dailyState[ruleIds.aserradero])applyBusinessRules(ruleIds.aserradero,"init");
-  updateBackupStatus();
+  const ids=new Set(tasks.map(t=>t.id));
+  Object.keys(priorityState).forEach(id=>{if(!ids.has(id))delete priorityState[id]});
+  save();updateBackupStatus();
 }
-function factoryComplete(f){return f.tasks.length>0&&f.tasks.every(t=>Boolean(dailyState[t.id]))}
-function factoryPending(f){return f.tasks.filter(t=>!dailyState[t.id]).length}
-function totalPending(){return catalog.reduce((a,f)=>a+factoryPending(f),0)}
-function productName(name){return name.trim().replace(/^Recoger\s+/i,"")||name}
 
-function renderGeneral(){
-  generalList.innerHTML="";
-  const pending=generalTasks.filter(t=>!t.done),done=generalTasks.filter(t=>t.done);
-  generalEmpty.style.display=generalTasks.length?"none":"block";
-  pending.forEach(t=>generalList.appendChild(makeGeneralRow(t)));
-  if(done.length){
-    const d=document.createElement("div");d.className="completed-divider";d.textContent="Hechas";generalList.appendChild(d);
-    done.forEach(t=>generalList.appendChild(makeGeneralRow(t)));
+function pending(){return tasks.filter(t=>!t.done)}
+function completed(){return tasks.filter(t=>t.done)}
+
+function render(){
+  const p=pending(),d=completed();
+  $("pending").innerHTML="";
+  $("done").innerHTML="";
+  $("counter").textContent=p.length===1?"1 tarea pendiente":`${p.length} tareas pendientes`;
+  $("doneSection").style.display=d.length?"block":"none";
+
+  if(!p.length){
+    const e=document.createElement("div");e.className="empty";e.textContent="No hay tareas pendientes.";$("pending").appendChild(e);
+  }else{
+    p.forEach((t,i)=>$("pending").appendChild(card(t,i,p.length,false)));
   }
+  d.forEach(t=>$("done").appendChild(card(t,0,d.length,true)));
 }
-function makeGeneralRow(task){
-  const wrap=document.createElement("div");
-  wrap.className="dual-swipe-wrap";
 
-  const del=document.createElement("button");
-  del.className="swipe-delete-action";
-  del.type="button";
-  del.textContent="Eliminar";
-  del.onclick=()=>deleteGeneral(task.id);
+function card(task,index,count,isDone){
+  const c=document.createElement("div");
+  c.className="task-card"+(task.done?" completed":"")+(priorityState[task.id]?" priority":"");
 
-  const row=document.createElement("div");
-  row.className="task general-row"+(task.done?" done":"")+(priorityState[task.id]?" priority":"");
-
-  const label=document.createElement("label");
-  label.className="task-label";
-
-  const input=document.createElement("input");
-  input.type="checkbox";
-  input.checked=task.done;
-
-  const mark=document.createElement("span");
-  mark.className="checkmark";
-
-  const text=document.createElement("span");
-  text.className="task-text";
-  const main=document.createElement("span");
-  main.textContent=task.text;
-  text.appendChild(main);
+  const content=document.createElement("div");content.className="task-content";
+  const check=document.createElement("span");check.className="check";
+  const wrap=document.createElement("div");wrap.className="textwrap";
+  const text=document.createElement("div");text.className="text";text.textContent=task.text;wrap.appendChild(text);
 
   if(priorityState[task.id]){
-    const note=document.createElement("span");
-    note.className="priority-note";
-    note.textContent="Prioritario";
-    text.appendChild(note);
+    const n=document.createElement("div");n.className="priority-note";n.textContent="Prioritaria";wrap.appendChild(n);
   }
 
-  input.onchange=()=>{
-    const item=generalTasks.find(t=>t.id===task.id);
-    if(item){
-      item.done=input.checked;
-      saveGeneral();
-      renderGeneral();
-    }
-  };
+  const order=document.createElement("div");order.className="order";
+  if(!isDone){
+    const up=document.createElement("button");up.textContent="↑";up.disabled=index===0;up.onclick=e=>{e.stopPropagation();move(task.id,-1)};
+    const down=document.createElement("button");down.textContent="↓";down.disabled=index===count-1;down.onclick=e=>{e.stopPropagation();move(task.id,1)};
+    order.append(up,down);
+  }
 
-  label.append(input,mark,text);
-  row.appendChild(label);
-  wrap.append(del,row);
+  content.append(check,wrap,order);c.appendChild(content);
 
-  bindDualSwipe(wrap,row,{
-    onPriority:()=>togglePriority(task.id),
-    onDelete:()=>deleteGeneral(task.id)
-  });
+  if(!editing){
+    bindSwipe(content,task.id);
+    content.onclick=()=>{if(gesture){gesture=false;return}toggleDone(task.id)};
+  }
 
-  return wrap;
+  return c;
 }
 
-function bindDualSwipe(wrap,content,actions){
+function bindSwipe(el,id){
   let sx=0,sy=0,dx=0,tracking=false;
-
-  content.addEventListener("touchstart",e=>{
+  el.addEventListener("touchstart",e=>{
     if(e.touches?.length!==1)return;
-    sx=e.touches[0].clientX;
-    sy=e.touches[0].clientY;
-    dx=0;
-    tracking=true;
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;tracking=true;gesture=false;
   },{passive:true});
 
-  content.addEventListener("touchmove",e=>{
+  el.addEventListener("touchmove",e=>{
     if(!tracking||e.touches?.length!==1)return;
     dx=e.touches[0].clientX-sx;
     const dy=e.touches[0].clientY-sy;
     if(Math.abs(dy)>Math.abs(dx))return;
-
-    if(dx<-24){
-      wrap.classList.add("delete-open");
-    }else if(dx>12){
-      wrap.classList.remove("delete-open");
-    }
+    if(Math.abs(dx)>10)gesture=true;
+    if(dx>0)el.style.transform=`translateX(${Math.min(dx,22)}px)`;
   },{passive:true});
 
-  content.addEventListener("touchend",()=>{
+  el.addEventListener("touchend",()=>{
     if(!tracking)return;
-    tracking=false;
-
-    if(dx>58){
-      wrap.classList.remove("delete-open");
-      content.classList.add("priority-flash");
-      setTimeout(()=>content.classList.remove("priority-flash"),360);
-      actions.onPriority?.();
-    }
+    tracking=false;el.style.transform="";
+    if(dx>58)togglePriority(id);
+    setTimeout(()=>gesture=false,80);
   },{passive:true});
 
-  content.addEventListener("touchcancel",()=>{tracking=false},{passive:true});
+  el.addEventListener("touchcancel",()=>{tracking=false;el.style.transform="";setTimeout(()=>gesture=false,80)},{passive:true});
 }
 
 function togglePriority(id){
-  if(priorityState[id])delete priorityState[id];
-  else priorityState[id]=true;
-  savePriority();
-  renderAll();
+  if(priorityState[id])delete priorityState[id];else priorityState[id]=true;
+  save();render();
 }
 
-function deleteGeneral(id){
-  generalTasks=generalTasks.filter(t=>t.id!==id);
-  delete priorityState[id];
-  saveGeneral();
-  savePriority();
-  renderGeneral();
+function toggleDone(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;save();render();
 }
 
-function addGeneral(){const text=generalTaskInput.value.trim();if(!text)return;generalTasks.push({id:uid("general"),text,done:false});generalTaskInput.value="";saveGeneral();renderGeneral()}
+function move(id,dir){
+  const p=pending(),i=p.findIndex(x=>x.id===id),j=i+dir;
+  if(i<0||j<0||j>=p.length)return;
+  const a=tasks.findIndex(x=>x.id===id),b=tasks.findIndex(x=>x.id===p[j].id);
+  [tasks[a],tasks[b]]=[tasks[b],tasks[a]];
+  save();render();
+}
 
-function makeCheckTask(task,factoryName){
-  const wrap=document.createElement("div");
-  wrap.className="dual-swipe-wrap";
+function addTask(){
+  const text=$("newTask").value.trim();if(!text)return;
+  tasks.push({id:uid(),text,done:false});
+  $("newTask").value="";save();render();
+}
 
-  const del=document.createElement("button");
-  del.className="swipe-delete-action";
-  del.type="button";
-  del.textContent="Eliminar";
-  del.onclick=()=>deleteFactoryInput(task.id);
+function clearDone(){
+  const ids=completed().map(t=>t.id);
+  tasks=tasks.filter(t=>!t.done);
+  ids.forEach(id=>delete priorityState[id]);
+  save();render();
+}
 
-  const row=document.createElement("div");
-  row.className="task"+(dailyState[task.id]?" done":"")+(pendingState[task.id]?" pending-state":"")+(priorityState[task.id]?" priority":"");
+function setEdit(v){
+  editing=v;
+  document.body.classList.toggle("editing",editing);
+  $("editBtn").textContent=editing?"Hecho":"Editar";
+  $("editBtn").className=editing?"sage":"secondary";
+  render();
+}
 
-  const label=document.createElement("label");
-  label.className="task-label";
-
-  const input=document.createElement("input");
-  input.type="checkbox";
-  input.checked=Boolean(dailyState[task.id]);
-
-  const mark=document.createElement("span");
-  mark.className="checkmark";
-
-  const text=document.createElement("span");
-  text.className="task-text";
-
-  const main=document.createElement("span");
-  main.textContent=factoryName||task.name;
-  text.appendChild(main);
-
-  if(priorityState[task.id]){
-    const pnote=document.createElement("span");
-    pnote.className="priority-note";
-    pnote.textContent="Prioritario";
-    text.appendChild(pnote);
-  }
-
-  if(pendingState[task.id]){
-    const pend=document.createElement("span");
-    pend.className="pending-note";
-    pend.textContent="Pendiente";
-    text.appendChild(pend);
-  }
-
-  if(autoState[task.id]){
-    const note=document.createElement("span");
-    note.className="auto-note";
-    note.textContent="Automático";
-    text.appendChild(note);
-  }
-
-  input.onchange=()=>{
-    dailyState[task.id]=input.checked;
-    if(input.checked)delete pendingState[task.id];
-    if(autoState[task.id])delete autoState[task.id];
-    applyBusinessRules(task.id,"manual");
-    saveDaily();saveAuto();savePending();renderAll();
-  };
-
-  label.append(input,mark,text);
-  row.appendChild(label);
-  wrap.append(del,row);
-
-  bindDualSwipe(wrap,row,{
-    onPriority:()=>togglePriority(task.id),
-    onDelete:()=>deleteFactoryInput(task.id)
+function legacyData(){
+  const o={};
+  Object.entries(LEGACY_KEYS).forEach(([name,key])=>{
+    const raw=localStorage.getItem(key);
+    if(raw!==null){try{o[name]=JSON.parse(raw)}catch(e){o[name]=raw}}
   });
-
-  return wrap;
+  return o;
 }
 
-function deleteFactoryInput(taskId){
-  let found=false;
-  catalog.forEach(f=>{
-    const before=f.tasks.length;
-    f.tasks=f.tasks.filter(t=>t.id!==taskId);
-    if(f.tasks.length!==before)found=true;
-  });
-
-  if(editing&&draftCatalog){
-    draftCatalog.forEach(f=>f.tasks=f.tasks.filter(t=>t.id!==taskId));
-  }
-
-  delete dailyState[taskId];
-  delete autoState[taskId];
-  delete priorityState[taskId];
-  delete pendingState[taskId];
-
-  saveCatalog();saveDaily();saveAuto();savePriority();savePending();
-
-  if(found){
-    sortCatalog(catalog);
-    renderAll();
-  }
-}
-
-function markFactoryComplete(id){
-  const f=catalog.find(x=>x.id===id);if(!f)return;
-  f.tasks.forEach(t=>{
-    dailyState[t.id]=true;
-    delete pendingState[t.id];
-    if(autoState[t.id])delete autoState[t.id];
-    applyBusinessRules(t.id,"manual");
-  });
-  saveDaily();saveAuto();savePending();renderAll();
-}
-function renderFactoryView(){
-  factoryView.innerHTML="";
-  if(editing){renderEditFactoryView();return}
-  const pending=catalog.filter(f=>!factoryComplete(f)),complete=catalog.filter(factoryComplete);
-  if(pending.length){const g=document.createElement("div");g.className="group-label";g.textContent="Pendientes";factoryView.appendChild(g);pending.forEach(f=>factoryView.appendChild(makeFactoryCard(f,false)))}
-  if(complete.length){
-    const toggle=document.createElement("button");toggle.type="button";toggle.className="completed-toggle"+(completedExpanded?" open":"");
-    const left=document.createElement("div");left.className="completed-toggle-left";
-    const chev=document.createElement("span");chev.className="chevron";chev.textContent="›";
-    const title=document.createElement("span");title.textContent="Completadas";left.append(chev,title);
-    const c=document.createElement("span");c.className="completed-count";c.textContent=complete.length;toggle.append(left,c);
-    const list=document.createElement("div");list.className="completed-list"+(completedExpanded?" open":"");complete.forEach(f=>list.appendChild(makeFactoryCard(f,true)));
-    toggle.onclick=()=>{completedExpanded=!completedExpanded;renderFactoryView()};factoryView.append(toggle,list);
-  }
-}
-function makeFactoryCard(f,completed){
-  const card=document.createElement("section");card.className="factory-card"+(completed?" completed":"");
-  const head=document.createElement("div");head.className="factory-head";
-  const tw=document.createElement("div");tw.className="factory-title-wrap";
-  const title=document.createElement("div");title.className="factory-title";title.textContent=f.name;
-  const sub=document.createElement("div");sub.className="factory-sub";sub.textContent=f.tasks.length===1?"1 tarea":`${f.tasks.length} tareas`;tw.append(title,sub);head.appendChild(tw);
-  const acts=document.createElement("div");acts.className="factory-head-actions";
-  const p=document.createElement("div");p.className="pending-badge";const n=factoryPending(f);p.textContent=completed?"✓":(n===1?"1 pendiente":`${n} pendientes`);
-  const pencil=document.createElement("button");
-  pencil.className="factory-edit-pencil";
-  pencil.type="button";
-  pencil.textContent="✎";
-  pencil.setAttribute("aria-label",`Editar ${f.name}`);
-  pencil.onclick=()=>openFactoryEditor(f.id);
-
-  const btn=document.createElement("button");
-  btn.className="complete-factory-btn";
-  btn.type="button";
-  btn.textContent="✓";
-  btn.onclick=()=>markFactoryComplete(f.id);
-
-  acts.append(p,pencil,btn);
-  head.appendChild(acts);
-  card.appendChild(head);
-  [...f.tasks].sort((a,b)=>{const ad=!!dailyState[a.id],bd=!!dailyState[b.id];if(ad!==bd)return ad?1:-1;return alphaCompare(a.name,b.name)}).forEach(t=>card.appendChild(makeCheckTask(t)));
-  return card;
-}
-function renderEditFactoryView(){
-  const g=document.createElement("div");g.className="group-label";g.textContent="Editar fábricas";factoryView.appendChild(g);
-  draftCatalog.forEach(f=>{
-    const card=document.createElement("section");card.className="factory-card";
-    const head=document.createElement("div");head.className="factory-head";
-    const tw=document.createElement("div");tw.className="factory-title-wrap";
-    const lab=document.createElement("span");lab.className="factory-edit-label";lab.textContent="Fábrica";
-    const fi=document.createElement("input");fi.className="edit-input factory-name-input";fi.value=f.name;fi.dataset.factoryId=f.id;tw.append(lab,fi);head.appendChild(tw);card.appendChild(head);
-    [...f.tasks].sort((a,b)=>alphaCompare(a.name,b.name)).forEach(t=>{
-      const wrap=document.createElement("div");
-      wrap.className="dual-swipe-wrap";
-
-      const del=document.createElement("button");
-      del.className="swipe-delete-action";
-      del.type="button";
-      del.textContent="Eliminar";
-      del.onclick=()=>{
-        syncDraftNamesFromDOM();
-        const factory=draftCatalog.find(x=>x.id===f.id);
-        if(factory)factory.tasks=factory.tasks.filter(x=>x.id!==t.id);
-        delete dailyState[t.id];
-        delete autoState[t.id];
-        delete priorityState[t.id];
-        delete pendingState[t.id];
-        saveDaily();saveAuto();savePriority();savePending();
-        renderFactoryView();
-      };
-
-      const content=document.createElement("div");
-      content.className="edit-swipe-content task"+(priorityState[t.id]?" priority":"");
-
-      const inp=document.createElement("input");
-      inp.className="edit-input task-name-input";
-      inp.value=t.name;
-      inp.dataset.factoryId=f.id;
-      inp.dataset.taskId=t.id;
-
-      content.appendChild(inp);
-      wrap.append(del,content);
-      bindDualSwipe(wrap,content,{
-        onPriority:()=>{syncDraftNamesFromDOM();togglePriority(t.id)},
-        onDelete:()=>del.click()
-      });
-      card.appendChild(wrap);
-    });
-    const ar=document.createElement("div");ar.className="add-input-row";const ab=document.createElement("button");ab.className="add-input-btn";ab.type="button";ab.textContent="＋ Añadir input";ab.onclick=()=>{syncDraftNamesFromDOM();openAddInput(f.id)};ar.appendChild(ab);card.appendChild(ar);factoryView.appendChild(card);
+function restoreLegacy(o){
+  if(!o||typeof o!=="object")return;
+  Object.entries(LEGACY_KEYS).forEach(([name,key])=>{
+    if(Object.prototype.hasOwnProperty.call(o,name))localStorage.setItem(key,JSON.stringify(o[name]));
   });
 }
-function syncDraftNamesFromDOM(){
-  if(!editing||!draftCatalog)return;
-  document.querySelectorAll(".factory-name-input").forEach(i=>{const f=draftCatalog.find(x=>x.id===i.dataset.factoryId);if(f&&i.value.trim())f.name=i.value.trim()});
-  document.querySelectorAll(".task-name-input").forEach(i=>{const f=draftCatalog.find(x=>x.id===i.dataset.factoryId);const t=f?.tasks.find(x=>x.id===i.dataset.taskId);if(t&&i.value.trim())t.name=i.value.trim()});
-}
-function beginEdit(){setView("factory");editing=true;draftCatalog=clone(catalog);document.body.classList.add("editing");editBtn.textContent="Guardar";editBtn.classList.remove("secondary");editBtn.classList.add("editing-save");renderFactoryView()}
-function saveEdit(){
-  syncDraftNamesFromDOM();
-  sortCatalog(draftCatalog);
-  catalog=clone(draftCatalog);
 
-  const valid=new Set(catalog.flatMap(f=>f.tasks.map(t=>t.id)));
-  Object.keys(dailyState).forEach(id=>{if(!valid.has(id))delete dailyState[id]});
-  Object.keys(autoState).forEach(id=>{if(!valid.has(id))delete autoState[id]});
-  Object.keys(priorityState).forEach(id=>{
-    const isGeneral=generalTasks.some(t=>t.id===id);
-    if(!valid.has(id)&&!isGeneral)delete priorityState[id];
-  });
-  Object.keys(pendingState).forEach(id=>{
-    if(!valid.has(id))delete pendingState[id];
-  });
-
-  editing=false;
-  draftCatalog=null;
-  document.body.classList.remove("editing");
-  editBtn.textContent="Editar";
-  editBtn.classList.remove("editing-save");
-  editBtn.classList.add("secondary");
-
-  ensureDailyKeys();
-  saveCatalog();saveDaily();saveAuto();savePriority();savePending();
-  renderAll();
+function backupObject(){
+  return {format:"FS25_TASKS_BACKUP",schemaVersion:1,appVersion:"4.0",exportedAt:new Date().toISOString(),tasks:clone(tasks),priorityState:clone(priorityState),legacyIndustrialData:legacyData()};
 }
 
-function renderProductView(){
-  productView.innerHTML="";const products={};
-  catalog.forEach(f=>f.tasks.forEach(t=>{const p=productName(t.name);if(!products[p])products[p]=[];products[p].push({factory:f,task:t})}));
-  Object.keys(products).sort(alphaCompare).forEach(p=>{const card=document.createElement("section");card.className="product-card";const h=document.createElement("div");h.className="product-head";h.textContent=p;card.appendChild(h);products[p].sort((a,b)=>alphaCompare(a.factory.name,b.factory.name)).forEach(x=>card.appendChild(makeCheckTask(x.task,x.factory.name)));productView.appendChild(card)});
-}
-function updateCounter(){const p=totalPending();counter.textContent=p===1?"1 pendiente":`${p} pendientes`;allDone.classList.toggle("visible",catalog.length>0&&p===0)}
-function renderAll(){renderGeneral();renderFactoryView();renderProductView();updateCounter()}
-function setView(view,save=true){const fac=view!=="product";factoryView.classList.toggle("active",fac);productView.classList.toggle("active",!fac);factoryViewBtn.classList.toggle("active",fac);productViewBtn.classList.toggle("active",!fac);newFactoryBtn.style.display=fac?"inline-flex":"none";if(save)localStorage.setItem(VIEW_KEY,fac?"factory":"product")}
-
-function openModal(title,fields,onSave){modalTitle.textContent=title;modalFields.innerHTML="";fields.forEach(f=>{const l=document.createElement("label");l.textContent=f.label;const i=document.createElement("input");i.id=f.id;i.type="text";i.placeholder=f.placeholder||"";modalFields.append(l,i)});modalSaveBtn.onclick=onSave;modalBackdrop.classList.add("open")}
-function closeModal(){modalBackdrop.classList.remove("open");modalSaveBtn.onclick=null}
-function openNewFactory(){
-  openFactoryEditor(null);
-}
-
-function openFactoryEditor(factoryId){
-  if(editing)saveEdit();
-
-  const original=factoryId?catalog.find(f=>f.id===factoryId):null;
-  const draft=original?clone(original):{id:uid("factory"),name:"",tasks:[]};
-
-  modalTitle.textContent=original?`Editar fábrica · ${original.name}`:"Nueva fábrica";
-  modalFields.innerHTML="";
-
-  const nameLabel=document.createElement("label");
-  nameLabel.textContent="Nombre de la fábrica";
-  const nameInput=document.createElement("input");
-  nameInput.id="factoryEditorName";
-  nameInput.type="text";
-  nameInput.placeholder="Ej. Cervecería";
-  nameInput.value=draft.name;
-  modalFields.append(nameLabel,nameInput);
-
-  const inputsLabel=document.createElement("label");
-  inputsLabel.textContent="Inputs";
-  modalFields.appendChild(inputsLabel);
-
-  const list=document.createElement("div");
-  list.className="factory-editor-list";
-  modalFields.appendChild(list);
-
-  const hint=document.createElement("div");
-  hint.className="factory-editor-hint";
-  hint.textContent="Swipe derecha → izquierda para eliminar. Swipe izquierda → derecha para marcar prioridad.";
-  modalFields.appendChild(hint);
-
-  const add=document.createElement("button");
-  add.type="button";
-  add.className="factory-editor-add";
-  add.textContent="＋ Añadir input";
-  modalFields.appendChild(add);
-
-  function addDraftInput(name="",id=null){
-    draft.tasks.push({id:id||uid("task"),name});
-    renderDraftInputs();
-  }
-
-  function renderDraftInputs(){
-    list.innerHTML="";
-
-    draft.tasks.forEach(task=>{
-      const wrap=document.createElement("div");
-      wrap.className="dual-swipe-wrap";
-
-      const del=document.createElement("button");
-      del.className="swipe-delete-action";
-      del.type="button";
-      del.textContent="Eliminar";
-      del.onclick=()=>{
-        draft.tasks=draft.tasks.filter(t=>t.id!==task.id);
-        renderDraftInputs();
-      };
-
-      const content=document.createElement("div");
-      content.className="edit-swipe-content factory-editor-input-row"+(priorityState[task.id]?" priority":"");
-
-      const inp=document.createElement("input");
-      inp.type="text";
-      inp.value=task.name;
-      inp.placeholder="Nombre del input";
-      inp.oninput=()=>task.name=inp.value;
-
-      content.appendChild(inp);
-      wrap.append(del,content);
-
-      bindDualSwipe(wrap,content,{
-        onPriority:()=>{
-          if(priorityState[task.id])delete priorityState[task.id];
-          else priorityState[task.id]=true;
-          savePriority();
-          renderDraftInputs();
-        },
-        onDelete:()=>del.click()
-      });
-
-      list.appendChild(wrap);
-    });
-  }
-
-  add.onclick=()=>addDraftInput("");
-
-  if(!draft.tasks.length){
-    addDraftInput("");
-  }else{
-    renderDraftInputs();
-  }
-
-  modalSaveBtn.onclick=()=>{
-    const name=nameInput.value.trim();
-    if(!name)return;
-
-    draft.name=name;
-    draft.tasks=draft.tasks
-      .map(t=>({id:t.id,name:(t.name||"").trim()}))
-      .filter(t=>t.name);
-
-    draft.tasks.forEach(t=>{
-      if(typeof dailyState[t.id]!=="boolean")dailyState[t.id]=false;
-    });
-
-    if(original){
-      const idx=catalog.findIndex(f=>f.id===original.id);
-      if(idx>=0)catalog[idx]=clone(draft);
-    }else{
-      catalog.push(clone(draft));
-    }
-
-    sortCatalog(catalog);
-
-    const valid=new Set(catalog.flatMap(f=>f.tasks.map(t=>t.id)));
-    Object.keys(dailyState).forEach(id=>{if(!valid.has(id))delete dailyState[id]});
-    Object.keys(autoState).forEach(id=>{if(!valid.has(id))delete autoState[id]});
-    Object.keys(priorityState).forEach(id=>{
-      const isGeneral=generalTasks.some(t=>t.id===id);
-      if(!valid.has(id)&&!isGeneral)delete priorityState[id];
-    });
-    Object.keys(pendingState).forEach(id=>{
-      if(!valid.has(id))delete pendingState[id];
-    });
-
-    saveCatalog();saveDaily();saveAuto();savePriority();savePending();
-    closeModal();
-    renderAll();
-  };
-
-  modalBackdrop.classList.add("open");
-  setTimeout(()=>nameInput.focus(),50);
-}
-
-function openAddInput(fid){
-  if(!editing||!draftCatalog)return;
-  syncDraftNamesFromDOM();
-  const f=draftCatalog.find(x=>x.id===fid);
-  if(!f)return;
-  const id=uid("task");
-  f.tasks.push({id,name:"Nuevo input"});
-  dailyState[id]=false;
-  saveDaily();
-  renderFactoryView();
-}
-
-function makeBackupObject(){
-  return {
-    format:"FS25_CHECKLIST_BACKUP",
-    schemaVersion:4,
-    appVersion:"3.3",
-    exportedAt:new Date().toISOString(),
-    catalog:clone(catalog),
-    generalTasks:clone(generalTasks),
-    dailyState:clone(dailyState),
-    autoState:clone(autoState),
-    priorityState:clone(priorityState),
-    pendingState:clone(pendingState),
-    view:localStorage.getItem(VIEW_KEY)||"factory"
-  };
-}
 async function exportBackup(){
-  if(editing)saveEdit();
-  const data=JSON.stringify(makeBackupObject(),null,2);
-  const date=new Date().toISOString().slice(0,10);
-  const filename=`FS25-backup-${date}.json`;
-  const file=new File([data],filename,{type:"application/json"});
-
+  const data=JSON.stringify(backupObject(),null,2);
+  const name=`FS25-tareas-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const f=new File([data],name,{type:"application/json"});
   try{
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file],title:"FS25 Checklist backup"});
-    }else{
-      const url=URL.createObjectURL(file);
-      const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:"FS25 Tareas backup"});
+    else{
+      const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
     }
-    localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastExport:new Date().toISOString()}));
-    updateBackupStatus();
-  }catch(e){
-    if(e.name!=="AbortError") alert("No se pudo exportar la copia.");
-  }
+    localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastExport:new Date().toISOString()}));updateBackupStatus();
+  }catch(e){if(e.name!=="AbortError")alert("No se pudo exportar la copia.")}
 }
-function validateBackup(obj){
-  if(!obj||obj.format!=="FS25_CHECKLIST_BACKUP"||!Array.isArray(obj.catalog)||!Array.isArray(obj.generalTasks)||typeof obj.dailyState!=="object")throw new Error("Formato no válido");
-  obj.catalog.forEach(f=>{if(!f.id||!f.name||!Array.isArray(f.tasks))throw new Error("Catálogo no válido");f.tasks.forEach(t=>{if(!t.id||!t.name)throw new Error("Input no válido")})});
-}
-async function importBackupFile(file){
+
+async function importBackup(file){
   try{
-    const obj=JSON.parse(await file.text());validateBackup(obj);
-    catalog=clone(obj.catalog);generalTasks=clone(obj.generalTasks);dailyState=clone(obj.dailyState||{});autoState=clone(obj.autoState||{});priorityState=clone(obj.priorityState||{});pendingState=clone(obj.pendingState||{});
-    sortCatalog(catalog);ensureDailyKeys();
-    saveCatalog();saveGeneral();saveDaily();saveAuto();savePriority();savePending();
-    if(obj.view==="product"||obj.view==="factory")localStorage.setItem(VIEW_KEY,obj.view);
-    localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastImport:new Date().toISOString(),fileName:file.name}));
-    completedExpanded=false;renderAll();setView(localStorage.getItem(VIEW_KEY)||"factory",false);updateBackupStatus();
+    const obj=JSON.parse(await file.text());
+    const v4=obj&&obj.format==="FS25_TASKS_BACKUP"&&Array.isArray(obj.tasks);
+    const v3=obj&&obj.format==="FS25_CHECKLIST_BACKUP"&&Array.isArray(obj.generalTasks);
+    if(!v4&&!v3)throw new Error();
+
+    if(v4){
+      tasks=normalize(obj.tasks);
+      priorityState=obj.priorityState&&typeof obj.priorityState==="object"?clone(obj.priorityState):{};
+      restoreLegacy(obj.legacyIndustrialData);
+    }else{
+      tasks=normalize(obj.generalTasks);
+      priorityState=obj.priorityState&&typeof obj.priorityState==="object"?clone(obj.priorityState):{};
+      restoreLegacy({catalog:obj.catalog,dailyState:obj.dailyState,view:obj.view,autoState:obj.autoState,pendingState:obj.pendingState});
+    }
+
+    const ids=new Set(tasks.map(t=>t.id));
+    Object.keys(priorityState).forEach(id=>{if(!ids.has(id))delete priorityState[id]});
+    save();render();
+    localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastImport:new Date().toISOString(),fileName:file.name}));updateBackupStatus();
     alert("Copia importada correctamente.");
-  }catch(e){alert("El archivo no es una copia válida de FS25 Checklist.")}
+  }catch(e){alert("El archivo no es una copia válida de FS25 Tareas.")}
 }
+
 function updateBackupStatus(){
-  const meta=readJSON(BACKUP_META_KEY,{});
-  if(meta.lastExport){const d=new Date(meta.lastExport);backupStatus.textContent=`Última copia exportada: ${d.toLocaleString("es-ES")}`;}
-  else if(meta.lastImport){const d=new Date(meta.lastImport);backupStatus.textContent=`Última copia importada: ${d.toLocaleString("es-ES")}`;}
-  else backupStatus.textContent="La copia incluye fábricas, inputs, tareas generales, prioridades, pendientes, reglas automáticas y estado diario.";
+  const m=readJSON(BACKUP_META_KEY,{});
+  if(m.lastExport)$("backupStatus").textContent=`Última copia exportada: ${new Date(m.lastExport).toLocaleString("es-ES")}. Los datos industriales legacy también se conservan.`;
+  else if(m.lastImport)$("backupStatus").textContent=`Última copia importada: ${new Date(m.lastImport).toLocaleString("es-ES")}.`;
 }
 
-addGeneralTaskBtn.onclick=addGeneral;
-generalTaskInput.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addGeneral()}};
-factoryViewBtn.onclick=()=>{if(editing)saveEdit();setView("factory")};
-productViewBtn.onclick=()=>{if(editing)saveEdit();setView("product")};
-newFactoryBtn.onclick=openNewFactory;
-editBtn.onclick=()=>editing?saveEdit():beginEdit();
-resetBtn.onclick=()=>{
-  if(editing)saveEdit();
+$("addBtn").onclick=addTask;
+$("newTask").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addTask()}};
+$("editBtn").onclick=()=>setEdit(!editing);
+$("clearBtn").onclick=clearDone;
+$("backupToggle").onclick=()=>{backupOpen=!backupOpen;$("backupPanel").classList.toggle("open",backupOpen)};
+$("exportBtn").onclick=exportBackup;
+$("importBtn").onclick=()=>$("file").click();
+$("file").onchange=()=>{const f=$("file").files?.[0];if(f)importBackup(f);$("file").value=""};
 
-  const removedGeneralIds=generalTasks.filter(t=>t.done).map(t=>t.id);
-  generalTasks=generalTasks.filter(t=>!t.done);
-  removedGeneralIds.forEach(id=>delete priorityState[id]);
-  saveGeneral();savePriority();
+load();render();
 
-  catalog.forEach(f=>{
-    f.tasks.forEach(t=>{
-      if(dailyState[t.id]){
-        delete pendingState[t.id];
-      }else{
-        pendingState[t.id]=true;
-      }
-      dailyState[t.id]=false;
-    });
-  });
-
-  autoState={};
-  saveDaily();saveAuto();savePending();
-
-  completedExpanded=false;
-  renderAll();
-  window.scrollTo({top:0,behavior:"smooth"});
-};
-backupToggle.onclick=()=>{
-  backupExpanded=!backupExpanded;
-  backupToggle.classList.toggle("open",backupExpanded);
-  backupPanel.classList.toggle("open",backupExpanded);
-};
-modalCancelBtn.onclick=closeModal;modalBackdrop.onclick=e=>{if(e.target===modalBackdrop)closeModal()};
-exportBtn.onclick=exportBackup;
-importBtn.onclick=()=>importFile.click();
-importFile.onchange=()=>{const file=importFile.files?.[0];if(file)importBackupFile(file);importFile.value=""};
-
-loadData();renderAll();setView(localStorage.getItem(VIEW_KEY)||"factory",false);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
 </script>
 </body>
 </html>
