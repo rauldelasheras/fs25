@@ -10,48 +10,96 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>FS25 · Tareas</title>
 <style>
-:root{--bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;--sage:#6f736c;--sageSoft:#eef0ec;--purple:#eadfff;--purpleStrong:#aa86e8;--purpleText:#382b4d;--shadow:0 2px 14px rgba(0,0,0,.06)}
+:root{
+  --bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;
+  --sage:#6f736c;--sageSoft:#eef0ec;--purple:#eadfff;--purpleStrong:#aa86e8;
+  --purpleText:#382b4d;--blueSoft:#eaf2ff;--blue:#4c79bd;--shadow:0 2px 14px rgba(0,0,0,.06)
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
 body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(96px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .app{width:min(760px,100%);margin:auto}
 h1{margin:6px 2px 16px;font-size:clamp(30px,7vw,42px);letter-spacing:-.035em}
 button,input{font:inherit}
-button{border:0;border-radius:14px;background:var(--text);color:#fff;min-height:44px;padding:10px 14px;font-weight:750}
+button{border:0;border-radius:14px;background:var(--text);color:#fff;min-height:44px;padding:10px 14px;font-weight:750;cursor:pointer}
 button.secondary{background:#e9e9ec;color:var(--text)}
 button.sage{background:var(--sage)}
-.add{display:flex;gap:8px;margin-bottom:14px;padding:14px;border-radius:20px;background:#fff;box-shadow:var(--shadow)}
-.add input{width:100%;min-width:0;min-height:46px;padding:10px 13px;border:1px solid var(--line);border-radius:13px;font-size:16px}
-.status{position:sticky;top:max(8px,env(safe-area-inset-top));z-index:40;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 18px;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);box-shadow:var(--shadow)}
+button.blue{background:#496f9f;color:#fff}
+
+.add{margin-bottom:14px;padding:14px;border-radius:20px;background:#fff;box-shadow:var(--shadow)}
+.add-row{display:flex;gap:8px}
+.add input{
+  width:100%;min-width:0;min-height:46px;padding:10px 13px;border:1px solid var(--line);border-radius:13px;
+  background:#fff;color:var(--text);font-size:16px;outline:none;
+  user-select:text!important;-webkit-user-select:text!important;-webkit-touch-callout:default!important;touch-action:manipulation
+}
+.add-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+
+.status{
+  position:sticky;top:max(8px,env(safe-area-inset-top));z-index:40;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin:14px 0 18px;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.94);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--shadow)
+}
 .status-label{color:var(--muted);font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}
 .counter{margin-top:2px;font-size:22px;font-weight:850}
+.status-actions{display:flex;gap:7px}
+.status-actions button{min-height:40px;padding:8px 12px}
+#cancelEditBtn{display:none}
+body.editing #cancelEditBtn{display:inline-block}
+body.editing .add{display:none}
+
+.help{margin:-4px 4px 16px;color:var(--muted);font-size:12px;line-height:1.4}
 .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 4px 10px}
 .section-title{margin:0;color:var(--muted);font-size:13px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
 .clear{min-height:36px;padding:7px 11px;border-radius:11px;background:#e9e9ec;color:var(--text);font-size:13px}
-.task-card{margin-bottom:10px;border-radius:18px;overflow:hidden;background:#fff;box-shadow:var(--shadow);touch-action:pan-y}
-.task-content{display:flex;align-items:center;gap:12px;min-height:64px;padding:13px 16px;background:#fff;transition:transform .15s ease,background .15s ease;user-select:none}
+
+.task-group{margin-bottom:10px}
+.subtask-list{margin-left:30px;margin-top:7px}
+.subtask-list:empty{display:none}
+.task-card{position:relative;overflow:hidden;margin-bottom:8px;border-radius:18px;background:#fff;box-shadow:var(--shadow);touch-action:pan-y}
+.task-card.subtask-card{border-radius:16px}
+.swipe-action{position:absolute;inset:0;z-index:0;display:flex;align-items:center;font-size:12px;font-weight:850;text-transform:uppercase;letter-spacing:.03em;pointer-events:none}
+.swipe-action.left{justify-content:flex-start;padding-left:16px;background:var(--blueSoft);color:var(--blue)}
+.swipe-action.right{justify-content:flex-end;padding-right:16px;background:var(--purple);color:#7654aa}
+.task-content{position:relative;z-index:2;display:flex;align-items:center;gap:12px;min-height:64px;padding:13px 16px;background:#fff;transition:transform .14s ease,background .14s ease;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.subtask-card .task-content{min-height:56px;padding:10px 14px}
 .task-card.priority .task-content{background:var(--purple);border-left:4px solid var(--purpleStrong);color:var(--purpleText)}
 .task-card.completed .task-content{background:var(--sageSoft);color:var(--muted)}
 .task-card.completed.priority .task-content{background:var(--purple);color:var(--purpleText)}
 .check{width:30px;height:30px;flex:0 0 30px;border:2px solid #b8b8bd;border-radius:9px;background:#fff;display:grid;place-items:center}
+.subtask-card .check{width:26px;height:26px;flex-basis:26px;border-radius:8px}
 .check:after{content:"";width:8px;height:14px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) scale(0);margin-top:-2px}
 .completed .check{border-color:var(--sage);background:var(--sage)}
 .completed .check:after{transform:rotate(45deg) scale(1)}
-.textwrap{flex:1;min-width:0}.text{font-size:17px;font-weight:650;line-height:1.3;word-break:break-word}.completed .text{text-decoration:line-through}
+.textwrap{flex:1;min-width:0}.text{font-size:17px;font-weight:650;line-height:1.3;word-break:break-word}.subtask-card .text{font-size:15px}.completed .text{text-decoration:line-through}
 .priority-note{margin-top:4px;color:#7654aa;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
-.help{margin:-2px 4px 16px;color:var(--muted);font-size:12px;line-height:1.4}
-.task-content{-webkit-touch-callout:none}
-.drag-source{overflow:visible}
-.drag-source .task-content{visibility:hidden}
-.drag-ghost{position:fixed!important;z-index:9999!important;margin:0!important;pointer-events:none!important;opacity:.98;transform:scale(1.025);box-shadow:0 14px 36px rgba(0,0,0,.20)!important}
-.drag-ghost .task-content{visibility:visible!important}
-body.dragging-task{cursor:grabbing;overscroll-behavior:none}
+.subtask-label{margin-top:3px;color:#8b8b92;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
 .empty{padding:20px;border-radius:18px;background:#fff;color:var(--muted);text-align:center;box-shadow:var(--shadow)}
+
+/* Edición estructural */
+.edit-controls{display:none;align-items:center;gap:6px;flex:0 0 auto}
+body.editing .edit-controls{display:flex}
+body.editing .task-card{overflow:visible}
+body.editing .task-content{cursor:default}
+.drag-handle,.hierarchy-btn{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;border-radius:11px;background:#efeff2;color:#343438;display:grid;place-items:center;font-size:17px;font-weight:900}
+.drag-handle{touch-action:none;cursor:grab;font-size:20px;letter-spacing:-3px;padding-right:3px}
+.dragging-edit{opacity:.55;transform:scale(.985)}
+.dragging-edit .task-content{box-shadow:0 9px 24px rgba(0,0,0,.14)}
+body.editing #doneSection{display:none!important}
+.edit-drop-target{outline:2px dashed #8aa6cf;outline-offset:3px}
+
 .backup-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding:14px 16px;border-radius:18px;background:#fff;color:var(--text);box-shadow:var(--shadow)}
-.backup-panel{display:none;margin-top:8px;padding:14px;border-radius:18px;background:#fff;box-shadow:var(--shadow)}.backup-panel.open{display:block}
-.backup-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.note{margin:10px 2px 0;color:var(--muted);font-size:12px;line-height:1.4}
+.backup-panel{display:none;margin-top:8px;padding:14px;border-radius:18px;background:#fff;box-shadow:var(--shadow)}
+.backup-panel.open{display:block}
+.backup-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.note{margin:10px 2px 0;color:var(--muted);font-size:12px;line-height:1.4}
 #file{display:none}.version{margin:28px 0 4px;text-align:center;color:#9a9aa0;font-size:11px;font-weight:700}
-@media(max-width:480px){.status{padding:12px 13px}.counter{font-size:20px}.backup-buttons{grid-template-columns:1fr}}
+
+@media(max-width:480px){
+  .status{padding:12px 13px}.counter{font-size:20px}.backup-buttons{grid-template-columns:1fr}
+  .status-actions{flex-direction:column}.status-actions button{min-height:36px;padding:6px 10px}
+  .subtask-list{margin-left:22px}
+}
 </style>
 </head>
 <body>
@@ -59,37 +107,49 @@ body.dragging-task{cursor:grabbing;overscroll-behavior:none}
 <h1>FS25 · Tareas</h1>
 
 <section class="add">
-<input id="newTask" placeholder="Añadir nueva tarea" autocomplete="off">
-<button id="addBtn">Añadir</button>
+  <div class="add-row">
+    <input id="newTask" placeholder="Añadir nueva tarea" autocomplete="off" autocapitalize="sentences">
+  </div>
+  <div class="add-actions">
+    <button id="addBtn">Añadir</button>
+    <button id="constructionBtn" class="blue">Construcción</button>
+  </div>
 </section>
 
 <section class="status">
-<div><div class="status-label">Estado</div><div id="counter" class="counter">0 tareas pendientes</div></div>
+  <div>
+    <div class="status-label">Estado</div>
+    <div id="counter" class="counter">0 tareas pendientes</div>
+  </div>
+  <div class="status-actions">
+    <button id="cancelEditBtn" class="secondary">Cancelar</button>
+    <button id="editBtn" class="secondary">Editar</button>
+  </div>
 </section>
 
-<div class="help">Mantén pulsada una tarea pendiente y arrástrala para cambiar su orden.</div>
+<div id="help" class="help">Swipe → convierte una tarea en subtarea de la tarea superior. Swipe ← marca Prioritaria.</div>
 
 <section>
-<div class="section-head"><h2 class="section-title">Pendientes</h2></div>
-<div id="pending"></div>
+  <div class="section-head"><h2 class="section-title">Pendientes</h2></div>
+  <div id="pending"></div>
 </section>
 
 <section id="doneSection">
-<div class="section-head"><h2 class="section-title">Completadas</h2><button id="clearBtn" class="clear">Limpiar</button></div>
-<div id="done"></div>
+  <div class="section-head"><h2 class="section-title">Completadas</h2><button id="clearBtn" class="clear">Limpiar</button></div>
+  <div id="done"></div>
 </section>
 
 <button id="backupToggle" class="backup-toggle"><span>› &nbsp; Copia de seguridad</span><span style="color:var(--muted);font-size:13px">JSON</span></button>
 <section id="backupPanel" class="backup-panel">
-<div class="backup-buttons">
-<button id="exportBtn" class="sage">Exportar copia</button>
-<button id="importBtn" class="secondary">Importar copia</button>
-</div>
-<div id="backupStatus" class="note">Guarda tareas, orden, prioridad y conserva también los datos industriales de la V3.3 como datos legacy.</div>
-<input id="file" type="file" accept=".json,application/json">
+  <div class="backup-buttons">
+    <button id="exportBtn" class="sage">Exportar copia</button>
+    <button id="importBtn" class="secondary">Importar copia</button>
+  </div>
+  <div id="backupStatus" class="note">Guarda tareas, subtareas, orden, prioridad y conserva también los datos industriales legacy.</div>
+  <input id="file" type="file" accept=".json,application/json">
 </section>
 
-<div class="version">V4.1</div>
+<div class="version">V4.2</div>
 </main>
 
 <script>
@@ -98,17 +158,24 @@ const PRIORITY_KEY="fs25-priority-v321";
 const BACKUP_META_KEY="fs25-backup-meta-v1";
 const LEGACY_KEYS={catalog:"fs25-catalog-v30",dailyState:"fs25-daily-v30",view:"fs25-view-v30",autoState:"fs25-auto-v32",pendingState:"fs25-pending-v323"};
 
-const LONG_PRESS_MS=430;
 const SWIPE_TRIGGER=58;
 const MOVE_CANCEL=12;
+const CONSTRUCTION_SUBTASKS=[
+  "Pared prefabricada",
+  "Viga de madera",
+  "Tabla larga",
+  "Ladrillo de cemento",
+  "Chapa",
+  "Tabla de madera"
+];
 
 let tasks=[];
 let priorityState={};
 let backupOpen=false;
 let suppressClickUntil=0;
-let dragCard=null;
-let dragGhost=null;
-let dragOffsetY=0;
+let editing=false;
+let draftTasks=[];
+let editDrag=null;
 
 const $=id=>document.getElementById(id);
 
@@ -116,55 +183,149 @@ function readJSON(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function uid(){return "task-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8)}
 function save(){localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));localStorage.setItem(PRIORITY_KEY,JSON.stringify(priorityState))}
-function normalize(a){return Array.isArray(a)?a.filter(x=>x&&typeof x.text==="string"&&x.text.trim()).map(x=>({id:x.id||uid(),text:x.text.trim(),done:!!x.done})):[]}
+
+function normalize(list){
+  if(!Array.isArray(list))return [];
+
+  const out=list
+    .filter(x=>x&&typeof x.text==="string"&&x.text.trim())
+    .map(x=>({
+      id:x.id||uid(),
+      text:x.text.trim(),
+      done:!!x.done,
+      parentId:typeof x.parentId==="string"&&x.parentId?x.parentId:null
+    }));
+
+  const byId=new Map(out.map(t=>[t.id,t]));
+
+  out.forEach(t=>{
+    if(!t.parentId||t.parentId===t.id||!byId.has(t.parentId)){
+      t.parentId=null;
+      return;
+    }
+
+    const p=byId.get(t.parentId);
+    if(p.parentId){
+      const root=byId.get(p.parentId);
+      t.parentId=root&&!root.parentId?root.id:null;
+    }
+  });
+
+  return canonicalize(out);
+}
+
+function canonicalize(list){
+  const roots=list.filter(t=>!t.parentId);
+  const rootIds=new Set(roots.map(t=>t.id));
+  const childrenByParent=new Map();
+
+  roots.forEach(r=>childrenByParent.set(r.id,[]));
+
+  list.forEach(t=>{
+    if(t.parentId&&rootIds.has(t.parentId)){
+      childrenByParent.get(t.parentId).push(t);
+    }
+  });
+
+  const result=[];
+  roots.forEach(root=>{
+    result.push(root);
+    result.push(...(childrenByParent.get(root.id)||[]));
+  });
+  return result;
+}
 
 function load(){
   tasks=normalize(readJSON(TASKS_KEY,[]));
   priorityState=readJSON(PRIORITY_KEY,{});
   if(!priorityState||typeof priorityState!=="object")priorityState={};
-  const ids=new Set(tasks.map(t=>t.id));
-  Object.keys(priorityState).forEach(id=>{if(!ids.has(id))delete priorityState[id]});
+  cleanPriority(tasks);
   save();
   updateBackupStatus();
 }
 
-function pending(){return tasks.filter(t=>!t.done)}
-function completed(){return tasks.filter(t=>t.done)}
-
-function render(){
-  const p=pending(),d=completed();
-  $("pending").innerHTML="";
-  $("done").innerHTML="";
-  $("counter").textContent=p.length===1?"1 tarea pendiente":`${p.length} tareas pendientes`;
-  $("doneSection").style.display=d.length?"block":"none";
-
-  if(!p.length){
-    const e=document.createElement("div");
-    e.className="empty";
-    e.textContent="No hay tareas pendientes.";
-    $("pending").appendChild(e);
-  }else{
-    p.forEach(t=>$("pending").appendChild(card(t,false)));
-  }
-
-  d.forEach(t=>$("done").appendChild(card(t,true)));
+function cleanPriority(list){
+  const ids=new Set(list.map(t=>t.id));
+  Object.keys(priorityState).forEach(id=>{if(!ids.has(id))delete priorityState[id]});
 }
 
-function card(task,isDone){
+function rootsOf(list=tasks){return list.filter(t=>!t.parentId)}
+function childrenOf(parentId,list=tasks){return list.filter(t=>t.parentId===parentId)}
+function taskById(id,list=tasks){return list.find(t=>t.id===id)}
+function incompleteCount(){return tasks.filter(t=>!t.done).length}
+
+function render(){
+  if(editing){renderEdit();return}
+
+  const roots=rootsOf(tasks);
+  const pendingRoots=roots.filter(t=>!t.done);
+  const completedRoots=roots.filter(t=>t.done);
+
+  $("pending").innerHTML="";
+  $("done").innerHTML="";
+
+  const count=incompleteCount();
+  $("counter").textContent=count===1?"1 tarea pendiente":`${count} tareas pendientes`;
+  $("doneSection").style.display=completedRoots.length?"block":"none";
+  $("help").textContent="Swipe → convierte una tarea en subtarea de la tarea superior. Swipe ← marca Prioritaria.";
+
+  if(!pendingRoots.length){
+    const e=document.createElement("div");
+    e.className="empty";
+    e.textContent="No hay tareas principales pendientes.";
+    $("pending").appendChild(e);
+  }else{
+    pendingRoots.forEach(root=>$("pending").appendChild(normalGroup(root)));
+  }
+
+  completedRoots.forEach(root=>$("done").appendChild(normalGroup(root)));
+}
+
+function normalGroup(root){
+  const group=document.createElement("div");
+  group.className="task-group";
+  group.appendChild(normalCard(root,false));
+
+  const childList=document.createElement("div");
+  childList.className="subtask-list";
+  childrenOf(root.id).forEach(child=>childList.appendChild(normalCard(child,true)));
+  group.appendChild(childList);
+  return group;
+}
+
+function normalCard(task,isChild){
   const c=document.createElement("div");
-  c.className="task-card"+(task.done?" completed":"")+(priorityState[task.id]?" priority":"");
+  c.className="task-card"+(isChild?" subtask-card":"")+(task.done?" completed":"")+(priorityState[task.id]?" priority":"");
   c.dataset.id=task.id;
+
+  const leftAction=document.createElement("div");
+  leftAction.className="swipe-action left";
+  leftAction.textContent=isChild?"Subtarea":"↳ Subtarea";
+
+  const rightAction=document.createElement("div");
+  rightAction.className="swipe-action right";
+  rightAction.textContent="Prioritaria";
 
   const content=document.createElement("div");
   content.className="task-content";
+
   const check=document.createElement("span");
   check.className="check";
+
   const wrap=document.createElement("div");
   wrap.className="textwrap";
+
   const text=document.createElement("div");
   text.className="text";
   text.textContent=task.text;
   wrap.appendChild(text);
+
+  if(isChild){
+    const tag=document.createElement("div");
+    tag.className="subtask-label";
+    tag.textContent="Subtarea";
+    wrap.appendChild(tag);
+  }
 
   if(priorityState[task.id]){
     const n=document.createElement("div");
@@ -174,257 +335,143 @@ function card(task,isDone){
   }
 
   content.append(check,wrap);
-  c.appendChild(content);
+  c.append(leftAction,rightAction,content);
 
   content.addEventListener("contextmenu",e=>e.preventDefault());
-  bindGestures(c,content,task.id,!isDone);
+  bindSwipe(content,task.id,isChild);
 
   content.addEventListener("click",e=>{
-    if(Date.now()<suppressClickUntil){
-      e.preventDefault();
-      return;
-    }
+    if(Date.now()<suppressClickUntil){e.preventDefault();return}
     toggleDone(task.id);
   });
 
   return c;
 }
 
-function bindGestures(cardEl,content,id,canDrag){
-  let timer=null;
-  let sx=0,sy=0,dx=0,dy=0;
-  let horizontal=false;
-  let dragging=false;
-
-  function clearTimer(){
-    if(timer){clearTimeout(timer);timer=null}
-  }
+function bindSwipe(content,id,isChild){
+  let sx=0,sy=0,dx=0,dy=0,horizontal=false;
 
   content.addEventListener("touchstart",e=>{
     if(e.touches.length!==1)return;
     const t=e.touches[0];
-    sx=t.clientX;sy=t.clientY;dx=0;dy=0;horizontal=false;dragging=false;
-    clearTimer();
-
-    if(canDrag){
-      timer=setTimeout(()=>{
-        dragging=true;
-        suppressClickUntil=Date.now()+800;
-        startDrag(cardEl,sy);
-      },LONG_PRESS_MS);
-    }
+    sx=t.clientX;sy=t.clientY;dx=0;dy=0;horizontal=false;
   },{passive:true});
 
   content.addEventListener("touchmove",e=>{
     if(e.touches.length!==1)return;
     const t=e.touches[0];
-    dx=t.clientX-sx;
-    dy=t.clientY-sy;
-
-    if(dragging){
-      e.preventDefault();
-      updateDrag(t.clientY);
-      autoScroll(t.clientY);
-      return;
-    }
+    dx=t.clientX-sx;dy=t.clientY-sy;
 
     if(Math.abs(dx)>MOVE_CANCEL&&Math.abs(dx)>Math.abs(dy)){
-      clearTimer();
       horizontal=true;
       suppressClickUntil=Date.now()+450;
-      content.style.transform=dx>0?`translateX(${Math.min(dx,24)}px)`:"";
-      return;
-    }
-
-    if(Math.abs(dy)>MOVE_CANCEL){
-      clearTimer();
+      e.preventDefault();
+      const limited=Math.max(-78,Math.min(78,dx));
+      content.style.transform=`translateX(${limited}px)`;
     }
   },{passive:false});
 
   content.addEventListener("touchend",()=>{
-    clearTimer();
     content.style.transform="";
+    if(!horizontal)return;
 
-    if(dragging){
-      finishDrag();
-      suppressClickUntil=Date.now()+800;
-      return;
+    if(dx>SWIPE_TRIGGER&&!isChild){
+      convertToSubtask(id);
+    }else if(dx<-SWIPE_TRIGGER){
+      togglePriority(id);
     }
 
-    if(horizontal){
-      if(dx>SWIPE_TRIGGER)togglePriority(id);
-      suppressClickUntil=Date.now()+500;
-    }
-  },{passive:true});
-
-  content.addEventListener("touchcancel",()=>{
-    clearTimer();
-    content.style.transform="";
-    if(dragging)finishDrag();
     suppressClickUntil=Date.now()+500;
   },{passive:true});
 
+  content.addEventListener("touchcancel",()=>{
+    content.style.transform="";
+    suppressClickUntil=Date.now()+300;
+  },{passive:true});
+
+  /* Ratón: mismo comportamiento para PC */
+  let mouseDown=false,msx=0,msy=0,mdx=0,mdy=0,moved=false;
+
   content.addEventListener("mousedown",e=>{
     if(e.button!==0)return;
+    mouseDown=true;msx=e.clientX;msy=e.clientY;mdx=0;mdy=0;moved=false;
+  });
 
-    let mouseDown=true;
-    let msx=e.clientX,msy=e.clientY,mdx=0,mdy=0;
-    let mouseHorizontal=false;
-    let mouseDragging=false;
-
-    clearTimer();
-    if(canDrag){
-      timer=setTimeout(()=>{
-        if(!mouseDown)return;
-        mouseDragging=true;
-        suppressClickUntil=Date.now()+800;
-        startDrag(cardEl,msy);
-      },LONG_PRESS_MS);
+  window.addEventListener("mousemove",e=>{
+    if(!mouseDown)return;
+    mdx=e.clientX-msx;mdy=e.clientY-msy;
+    if(Math.abs(mdx)>MOVE_CANCEL&&Math.abs(mdx)>Math.abs(mdy)){
+      moved=true;
+      suppressClickUntil=Date.now()+450;
+      content.style.transform=`translateX(${Math.max(-78,Math.min(78,mdx))}px)`;
     }
+  });
 
-    function move(ev){
-      if(!mouseDown)return;
-      mdx=ev.clientX-msx;
-      mdy=ev.clientY-msy;
-
-      if(mouseDragging){
-        ev.preventDefault();
-        updateDrag(ev.clientY);
-        autoScroll(ev.clientY);
-        return;
-      }
-
-      if(Math.abs(mdx)>MOVE_CANCEL&&Math.abs(mdx)>Math.abs(mdy)){
-        clearTimer();
-        mouseHorizontal=true;
-        suppressClickUntil=Date.now()+450;
-        content.style.transform=mdx>0?`translateX(${Math.min(mdx,24)}px)`:"";
-        return;
-      }
-
-      if(Math.abs(mdy)>MOVE_CANCEL)clearTimer();
-    }
-
-    function up(){
-      if(!mouseDown)return;
-      mouseDown=false;
-      clearTimer();
-      content.style.transform="";
-      window.removeEventListener("mousemove",move);
-      window.removeEventListener("mouseup",up);
-
-      if(mouseDragging){
-        finishDrag();
-        suppressClickUntil=Date.now()+800;
-        return;
-      }
-
-      if(mouseHorizontal){
-        if(mdx>SWIPE_TRIGGER)togglePriority(id);
-        suppressClickUntil=Date.now()+500;
-      }
-    }
-
-    window.addEventListener("mousemove",move);
-    window.addEventListener("mouseup",up);
+  window.addEventListener("mouseup",()=>{
+    if(!mouseDown)return;
+    mouseDown=false;content.style.transform="";
+    if(!moved)return;
+    if(mdx>SWIPE_TRIGGER&&!isChild)convertToSubtask(id);
+    else if(mdx<-SWIPE_TRIGGER)togglePriority(id);
+    suppressClickUntil=Date.now()+500;
   });
 }
 
-function startDrag(cardEl,startY){
-  if(dragCard)return;
+function convertToSubtask(id){
+  const task=taskById(id);
+  if(!task||task.parentId||task.done)return;
 
-  dragCard=cardEl;
-  const rect=dragCard.getBoundingClientRect();
-  dragOffsetY=Math.max(0,Math.min(rect.height,startY-rect.top));
+  const pendingRoots=rootsOf(tasks).filter(t=>!t.done);
+  const index=pendingRoots.findIndex(t=>t.id===id);
+  if(index<=0)return;
 
-  dragGhost=dragCard.cloneNode(true);
-  dragGhost.classList.add("drag-ghost");
-  dragGhost.style.left=`${rect.left}px`;
-  dragGhost.style.top=`${rect.top}px`;
-  dragGhost.style.width=`${rect.width}px`;
-  dragGhost.style.height=`${rect.height}px`;
+  const parent=pendingRoots[index-1];
+  const block=[task,...childrenOf(task.id)];
+  const blockIds=new Set(block.map(t=>t.id));
 
-  document.body.appendChild(dragGhost);
-  dragCard.classList.add("drag-source");
-  document.body.classList.add("dragging-task");
+  task.parentId=parent.id;
+  block.slice(1).forEach(child=>child.parentId=parent.id);
 
-  if(navigator.vibrate){
-    try{navigator.vibrate(20)}catch(e){}
-  }
-}
+  const remaining=tasks.filter(t=>!blockIds.has(t.id));
+  const lastParentIndex=Math.max(...remaining.map((t,i)=>t.id===parent.id||t.parentId===parent.id?i:-1));
+  remaining.splice(lastParentIndex+1,0,...block);
 
-function updateDrag(clientY){
-  if(!dragCard||!dragGhost)return;
-
-  dragGhost.style.top=`${clientY-dragOffsetY}px`;
-
-  const list=$("pending");
-  const siblings=[...list.querySelectorAll(".task-card:not(.drag-source)")];
-  let inserted=false;
-
-  for(const sibling of siblings){
-    const rect=sibling.getBoundingClientRect();
-    if(clientY<rect.top+rect.height/2){
-      list.insertBefore(dragCard,sibling);
-      inserted=true;
-      break;
-    }
-  }
-
-  if(!inserted)list.appendChild(dragCard);
-}
-
-function autoScroll(clientY){
-  const edge=85;
-  if(clientY<edge)window.scrollBy(0,-12);
-  else if(clientY>window.innerHeight-edge)window.scrollBy(0,12);
-}
-
-function finishDrag(){
-  if(!dragCard)return;
-
-  const order=[...$("pending").querySelectorAll(".task-card")]
-    .map(el=>el.dataset.id)
-    .filter(Boolean);
-
-  const pendingMap=new Map(tasks.filter(t=>!t.done).map(t=>[t.id,t]));
-  const doneTasks=tasks.filter(t=>t.done);
-
-  tasks=[...order.map(id=>pendingMap.get(id)).filter(Boolean),...doneTasks];
-
-  dragCard.classList.remove("drag-source");
-  if(dragGhost)dragGhost.remove();
-  dragCard=null;
-  dragGhost=null;
-  dragOffsetY=0;
-  document.body.classList.remove("dragging-task");
-
-  save();
-  render();
+  tasks=canonicalize(remaining);
+  save();render();
 }
 
 function togglePriority(id){
   if(priorityState[id])delete priorityState[id];
   else priorityState[id]=true;
-  save();
-  render();
+  save();render();
 }
 
 function toggleDone(id){
-  const t=tasks.find(x=>x.id===id);
+  const t=taskById(id);
   if(!t)return;
 
   t.done=!t.done;
 
-  if(!t.done){
-    tasks=tasks.filter(x=>x.id!==id);
-    const firstDone=tasks.findIndex(x=>x.done);
-    if(firstDone===-1)tasks.push(t);
-    else tasks.splice(firstDone,0,t);
+  if(!t.parentId){
+    const block=[t,...childrenOf(t.id)];
+    const ids=new Set(block.map(x=>x.id));
+    const remaining=tasks.filter(x=>!ids.has(x.id));
+
+    if(t.done){
+      remaining.push(...block);
+    }else{
+      const firstDoneRoot=rootsOf(remaining).find(r=>r.done);
+      if(firstDoneRoot){
+        const idx=remaining.findIndex(x=>x.id===firstDoneRoot.id);
+        remaining.splice(idx,0,...block);
+      }else{
+        remaining.push(...block);
+      }
+    }
+    tasks=canonicalize(remaining);
   }
 
-  save();
-  render();
+  save();render();
 }
 
 function addTask(){
@@ -432,32 +479,339 @@ function addTask(){
   const text=input.value.trim();
   if(!text)return;
 
-  const item={id:uid(),text,done:false};
-  const firstDone=tasks.findIndex(t=>t.done);
-  if(firstDone===-1)tasks.push(item);
-  else tasks.splice(firstDone,0,item);
-
+  const task={id:uid(),text,done:false,parentId:null};
+  insertNewRoot(task);
   input.value="";
-  save();
-  render();
+  save();render();
   input.focus();
 }
 
+function insertNewRoot(root,children=[]){
+  const completedRoot=rootsOf(tasks).find(r=>r.done);
+  const block=[root,...children];
+
+  if(completedRoot){
+    const idx=tasks.findIndex(t=>t.id===completedRoot.id);
+    tasks.splice(idx,0,...block);
+  }else{
+    tasks.push(...block);
+  }
+  tasks=canonicalize(tasks);
+}
+
+function createConstruction(){
+  const name=prompt("Nombre de la fábrica o edificio");
+  if(name===null)return;
+  const clean=name.trim();
+  if(!clean)return;
+
+  const root={id:uid(),text:clean,done:false,parentId:null};
+  const children=CONSTRUCTION_SUBTASKS.map(text=>({id:uid(),text,done:false,parentId:root.id}));
+  insertNewRoot(root,children);
+  save();render();
+}
+
 function clearDone(){
-  const ids=completed().map(t=>t.id);
-  tasks=tasks.filter(t=>!t.done);
-  ids.forEach(id=>delete priorityState[id]);
-  save();
+  const completedRootIds=new Set(rootsOf(tasks).filter(r=>r.done).map(r=>r.id));
+  const removedIds=new Set();
+
+  tasks.forEach(t=>{
+    if(completedRootIds.has(t.id)||completedRootIds.has(t.parentId))removedIds.add(t.id);
+  });
+
+  tasks=tasks.filter(t=>!removedIds.has(t.id));
+  removedIds.forEach(id=>delete priorityState[id]);
+  save();render();
+}
+
+/* ---------- Modo edición ---------- */
+function enterEdit(){
+  editing=true;
+  draftTasks=clone(tasks);
+  document.body.classList.add("editing");
+  $("editBtn").textContent="Guardar";
+  $("editBtn").className="sage";
   render();
 }
 
+function saveEdit(){
+  syncDraftFromDOM();
+  tasks=normalize(draftTasks);
+  cleanPriority(tasks);
+  save();
+  exitEdit(false);
+}
+
+function cancelEdit(){exitEdit(true)}
+
+function exitEdit(discard){
+  if(discard)draftTasks=[];
+  editing=false;
+  editDrag=null;
+  document.body.classList.remove("editing");
+  $("editBtn").textContent="Editar";
+  $("editBtn").className="secondary";
+  render();
+}
+
+function renderEdit(){
+  $("pending").innerHTML="";
+  $("done").innerHTML="";
+  $("doneSection").style.display="none";
+  $("counter").textContent=`${draftTasks.filter(t=>!t.done).length} tareas pendientes`;
+  $("help").textContent="Edición: arrastra ≡ para ordenar. Las subtareas pueden moverse entre tareas. ↰ las convierte en tarea principal y ↳ convierte una tarea en subtarea de la superior. Pulsa Guardar al terminar.";
+
+  const pendingRoots=rootsOf(draftTasks).filter(t=>!t.done);
+
+  if(!pendingRoots.length){
+    const e=document.createElement("div");
+    e.className="empty";
+    e.textContent="No hay tareas principales pendientes.";
+    $("pending").appendChild(e);
+    return;
+  }
+
+  pendingRoots.forEach((root,index)=>$("pending").appendChild(editGroup(root,index)));
+}
+
+function editGroup(root,rootIndex){
+  const group=document.createElement("div");
+  group.className="task-group edit-group";
+  group.dataset.rootId=root.id;
+
+  group.appendChild(editCard(root,false,rootIndex>0));
+
+  const childList=document.createElement("div");
+  childList.className="subtask-list edit-child-list";
+  childList.dataset.parentId=root.id;
+
+  childrenOf(root.id,draftTasks).forEach(child=>childList.appendChild(editCard(child,true,true)));
+  group.appendChild(childList);
+  return group;
+}
+
+function editCard(task,isChild,canIndent){
+  const c=document.createElement("div");
+  c.className="task-card"+(isChild?" subtask-card":"")+(task.done?" completed":"")+(priorityState[task.id]?" priority":"");
+  c.dataset.id=task.id;
+  c.dataset.kind=isChild?"child":"root";
+
+  const content=document.createElement("div");
+  content.className="task-content";
+
+  const wrap=document.createElement("div");
+  wrap.className="textwrap";
+  const text=document.createElement("div");
+  text.className="text";
+  text.textContent=task.text;
+  wrap.appendChild(text);
+
+  if(isChild){
+    const tag=document.createElement("div");
+    tag.className="subtask-label";
+    tag.textContent="Subtarea";
+    wrap.appendChild(tag);
+  }
+
+  const controls=document.createElement("div");
+  controls.className="edit-controls";
+
+  const hierarchy=document.createElement("button");
+  hierarchy.type="button";
+  hierarchy.className="hierarchy-btn";
+  hierarchy.textContent=isChild?"↰":"↳";
+  hierarchy.title=isChild?"Convertir en tarea principal":"Convertir en subtarea de la tarea superior";
+  hierarchy.disabled=!isChild&&!canIndent;
+  hierarchy.style.opacity=hierarchy.disabled?".28":"1";
+  hierarchy.addEventListener("click",e=>{
+    e.stopPropagation();
+    if(isChild)draftOutdent(task.id);
+    else draftIndent(task.id);
+  });
+
+  const handle=document.createElement("button");
+  handle.type="button";
+  handle.className="drag-handle";
+  handle.textContent="≡";
+  handle.title="Mover";
+  handle.addEventListener("pointerdown",e=>startEditDrag(e,task.id,isChild));
+
+  controls.append(hierarchy,handle);
+  content.append(wrap,controls);
+  c.appendChild(content);
+  return c;
+}
+
+function syncDraftFromDOM(){
+  if(!editing)return;
+
+  const byId=new Map(draftTasks.map(t=>[t.id,t]));
+  const pendingOrdered=[];
+
+  [...$("pending").querySelectorAll(":scope > .edit-group")].forEach(group=>{
+    const rootId=group.dataset.rootId;
+    const root=byId.get(rootId);
+    if(!root)return;
+    root.parentId=null;
+    pendingOrdered.push(root);
+
+    const childList=group.querySelector(".edit-child-list");
+    [...childList.querySelectorAll(":scope > .task-card")].forEach(card=>{
+      const child=byId.get(card.dataset.id);
+      if(!child)return;
+      child.parentId=rootId;
+      pendingOrdered.push(child);
+    });
+  });
+
+  const editedIds=new Set(pendingOrdered.map(t=>t.id));
+  const untouched=draftTasks.filter(t=>!editedIds.has(t.id));
+  draftTasks=canonicalize([...pendingOrdered,...untouched]);
+}
+
+function draftIndent(id){
+  syncDraftFromDOM();
+
+  const root=taskById(id,draftTasks);
+  if(!root||root.parentId||root.done)return;
+
+  const pendingRoots=rootsOf(draftTasks).filter(r=>!r.done);
+  const idx=pendingRoots.findIndex(r=>r.id===id);
+  if(idx<=0)return;
+
+  const parent=pendingRoots[idx-1];
+  const block=[root,...childrenOf(root.id,draftTasks)];
+  const ids=new Set(block.map(t=>t.id));
+
+  root.parentId=parent.id;
+  block.slice(1).forEach(t=>t.parentId=parent.id);
+
+  let remaining=draftTasks.filter(t=>!ids.has(t.id));
+  const insertAt=Math.max(...remaining.map((t,i)=>t.id===parent.id||t.parentId===parent.id?i:-1))+1;
+  remaining.splice(insertAt,0,...block);
+  draftTasks=canonicalize(remaining);
+  renderEdit();
+}
+
+function draftOutdent(id){
+  syncDraftFromDOM();
+
+  const child=taskById(id,draftTasks);
+  if(!child||!child.parentId)return;
+  const oldParentId=child.parentId;
+  child.parentId=null;
+
+  const remaining=draftTasks.filter(t=>t.id!==id);
+  const parentBlockEnd=Math.max(...remaining.map((t,i)=>t.id===oldParentId||t.parentId===oldParentId?i:-1));
+  remaining.splice(parentBlockEnd+1,0,child);
+  draftTasks=canonicalize(remaining);
+  renderEdit();
+}
+
+function startEditDrag(e,id,isChild){
+  if(!editing||e.button!==undefined&&e.button!==0)return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  syncDraftFromDOM();
+
+  const card=[...document.querySelectorAll('.task-card')].find(el=>el.dataset.id===id);
+  if(!card)return;
+
+  const element=isChild?card:card.closest('.edit-group');
+  if(!element)return;
+
+  editDrag={id,isChild,element,pointerId:e.pointerId};
+  element.classList.add("dragging-edit");
+
+  window.addEventListener("pointermove",onEditDragMove,{passive:false});
+  window.addEventListener("pointerup",endEditDrag,{once:true});
+  window.addEventListener("pointercancel",endEditDrag,{once:true});
+}
+
+function onEditDragMove(e){
+  if(!editDrag)return;
+  e.preventDefault();
+
+  if(editDrag.isChild){
+    moveChildDOM(editDrag.element,e.clientX,e.clientY);
+  }else{
+    moveRootDOM(editDrag.element,e.clientY);
+  }
+
+  editAutoScroll(e.clientY);
+}
+
+function moveRootDOM(group,clientY){
+  const list=$("pending");
+  const others=[...list.querySelectorAll(":scope > .edit-group")].filter(el=>el!==group);
+  let placed=false;
+
+  for(const other of others){
+    const r=other.getBoundingClientRect();
+    if(clientY<r.top+r.height/2){
+      list.insertBefore(group,other);
+      placed=true;
+      break;
+    }
+  }
+  if(!placed)list.appendChild(group);
+}
+
+function moveChildDOM(card,clientX,clientY){
+  const groups=[...$("pending").querySelectorAll(":scope > .edit-group")];
+  if(!groups.length)return;
+
+  let targetGroup=null;
+  for(const group of groups){
+    const r=group.getBoundingClientRect();
+    if(clientY>=r.top&&clientY<=r.bottom){targetGroup=group;break}
+  }
+
+  if(!targetGroup){
+    targetGroup=clientY<groups[0].getBoundingClientRect().top?groups[0]:groups[groups.length-1];
+  }
+
+  groups.forEach(g=>g.classList.toggle("edit-drop-target",g===targetGroup));
+
+  const list=targetGroup.querySelector(".edit-child-list");
+  const others=[...list.querySelectorAll(":scope > .task-card")].filter(el=>el!==card);
+  let placed=false;
+
+  for(const other of others){
+    const r=other.getBoundingClientRect();
+    if(clientY<r.top+r.height/2){
+      list.insertBefore(card,other);
+      placed=true;
+      break;
+    }
+  }
+
+  if(!placed)list.appendChild(card);
+}
+
+function editAutoScroll(y){
+  const edge=80;
+  if(y<edge)window.scrollBy(0,-10);
+  else if(y>window.innerHeight-edge)window.scrollBy(0,10);
+}
+
+function endEditDrag(){
+  if(!editDrag)return;
+  editDrag.element.classList.remove("dragging-edit");
+  document.querySelectorAll(".edit-drop-target").forEach(el=>el.classList.remove("edit-drop-target"));
+  window.removeEventListener("pointermove",onEditDragMove);
+  editDrag=null;
+  syncDraftFromDOM();
+  renderEdit();
+}
+
+/* ---------- Backup ---------- */
 function legacyData(){
   const o={};
   Object.entries(LEGACY_KEYS).forEach(([name,key])=>{
     const raw=localStorage.getItem(key);
-    if(raw!==null){
-      try{o[name]=JSON.parse(raw)}catch(e){o[name]=raw}
-    }
+    if(raw!==null){try{o[name]=JSON.parse(raw)}catch(e){o[name]=raw}}
   });
   return o;
 }
@@ -470,22 +824,36 @@ function restoreLegacy(o){
 }
 
 function backupObject(){
-  return {format:"FS25_TASKS_BACKUP",schemaVersion:1,appVersion:"4.1",exportedAt:new Date().toISOString(),tasks:clone(tasks),priorityState:clone(priorityState),legacyIndustrialData:legacyData()};
+  return {
+    format:"FS25_TASKS_BACKUP",
+    schemaVersion:2,
+    appVersion:"4.2",
+    exportedAt:new Date().toISOString(),
+    tasks:clone(tasks),
+    priorityState:clone(priorityState),
+    legacyIndustrialData:legacyData()
+  };
 }
 
 async function exportBackup(){
   const data=JSON.stringify(backupObject(),null,2);
   const name=`FS25-tareas-backup-${new Date().toISOString().slice(0,10)}.json`;
   const f=new File([data],name,{type:"application/json"});
+
   try{
-    if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:"FS25 Tareas backup"});
-    else{
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      await navigator.share({files:[f],title:"FS25 Tareas backup"});
+    }else{
       const u=URL.createObjectURL(f),a=document.createElement("a");
-      a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
+      a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(u),1000);
     }
+
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastExport:new Date().toISOString()}));
     updateBackupStatus();
-  }catch(e){if(e.name!=="AbortError")alert("No se pudo exportar la copia.")}
+  }catch(e){
+    if(e.name!=="AbortError")alert("No se pudo exportar la copia.");
+  }
 }
 
 async function importBackup(file){
@@ -505,9 +873,9 @@ async function importBackup(file){
       restoreLegacy({catalog:obj.catalog,dailyState:obj.dailyState,view:obj.view,autoState:obj.autoState,pendingState:obj.pendingState});
     }
 
-    const ids=new Set(tasks.map(t=>t.id));
-    Object.keys(priorityState).forEach(id=>{if(!ids.has(id))delete priorityState[id]});
+    cleanPriority(tasks);
     save();render();
+
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastImport:new Date().toISOString(),fileName:file.name}));
     updateBackupStatus();
     alert("Copia importada correctamente.");
@@ -518,22 +886,32 @@ async function importBackup(file){
 
 function updateBackupStatus(){
   const m=readJSON(BACKUP_META_KEY,{});
-  if(m.lastExport)$("backupStatus").textContent=`Última copia exportada: ${new Date(m.lastExport).toLocaleString("es-ES")}. Los datos industriales legacy también se conservan.`;
-  else if(m.lastImport)$("backupStatus").textContent=`Última copia importada: ${new Date(m.lastImport).toLocaleString("es-ES")}.`;
+  if(m.lastExport){
+    $("backupStatus").textContent=`Última copia exportada: ${new Date(m.lastExport).toLocaleString("es-ES")}. Incluye subtareas y datos industriales legacy.`;
+  }else if(m.lastImport){
+    $("backupStatus").textContent=`Última copia importada: ${new Date(m.lastImport).toLocaleString("es-ES")}.`;
+  }
 }
 
-$("addBtn").onclick=addTask;
-$("newTask").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addTask()}};
-$("clearBtn").onclick=clearDone;
-$("backupToggle").onclick=()=>{backupOpen=!backupOpen;$("backupPanel").classList.toggle("open",backupOpen)};
-$("exportBtn").onclick=exportBackup;
-$("importBtn").onclick=()=>$("file").click();
-$("file").onchange=()=>{const f=$("file").files?.[0];if(f)importBackup(f);$("file").value=""};
+/* ---------- Eventos ---------- */
+$("addBtn").addEventListener("click",addTask);
+$("newTask").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addTask()}});
+$("constructionBtn").addEventListener("click",createConstruction);
+$("clearBtn").addEventListener("click",clearDone);
 
-load();
-render();
+$("editBtn").addEventListener("click",()=>{if(editing)saveEdit();else enterEdit()});
+$("cancelEditBtn").addEventListener("click",cancelEdit);
 
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
+$("backupToggle").addEventListener("click",()=>{backupOpen=!backupOpen;$("backupPanel").classList.toggle("open",backupOpen)});
+$("exportBtn").addEventListener("click",exportBackup);
+$("importBtn").addEventListener("click",()=>$("file").click());
+$("file").addEventListener("change",()=>{const f=$("file").files?.[0];if(f)importBackup(f);$("file").value=""});
+
+load();render();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));
+}
 </script>
 </body>
 </html>
