@@ -13,7 +13,7 @@
 :root{
   --bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;
   --sage:#6f736c;--sageSoft:#eef0ec;--purple:#eadfff;--purpleStrong:#aa86e8;
-  --purpleText:#382b4d;--blueSoft:#eaf2ff;--blue:#4c79bd;--shadow:0 2px 14px rgba(0,0,0,.06)
+  --purpleText:#382b4d;--blueSoft:#eaf2ff;--blue:#4c79bd;--parentSoft:#eef3f7;--parentAccent:#9fb0bf;--shadow:0 2px 14px rgba(0,0,0,.06)
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
@@ -51,7 +51,8 @@ body.editing .add{display:none}
 .help{margin:-4px 4px 16px;color:var(--muted);font-size:12px;line-height:1.4}
 .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 4px 10px}
 .section-title{margin:0;color:var(--muted);font-size:13px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
-.clear{min-height:36px;padding:7px 11px;border-radius:11px;background:#e9e9ec;color:var(--text);font-size:13px}
+.clear,.subtasks-toggle{min-height:36px;padding:7px 11px;border-radius:11px;background:#e9e9ec;color:var(--text);font-size:13px}
+.subtasks-toggle{display:none}
 
 .task-group{margin-bottom:10px}
 .subtask-list{margin-left:30px;margin-top:7px}
@@ -66,6 +67,10 @@ body.editing .add{display:none}
 .task-card.priority .task-content{background:var(--purple);border-left:4px solid var(--purpleStrong);color:var(--purpleText)}
 .task-card.completed .task-content{background:var(--sageSoft);color:var(--muted)}
 .task-card.completed.priority .task-content{background:var(--purple);color:var(--purpleText)}
+.task-card.has-subtasks:not(.priority):not(.completed) .task-content{background:var(--parentSoft);border-left:4px solid var(--parentAccent)}
+.collapse-btn{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;border-radius:11px;background:rgba(0,0,0,.06);color:var(--text);display:grid;place-items:center;font-size:20px;font-weight:850;flex:0 0 auto}
+.task-card.priority .collapse-btn{background:rgba(255,255,255,.38);color:var(--purpleText)}
+.task-card.completed .collapse-btn{background:rgba(0,0,0,.055);color:var(--muted)}
 .check{width:30px;height:30px;flex:0 0 30px;border:2px solid #b8b8bd;border-radius:9px;background:#fff;display:grid;place-items:center}
 .subtask-card .check{width:26px;height:26px;flex-basis:26px;border-radius:8px}
 .check:after{content:"";width:8px;height:14px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) scale(0);margin-top:-2px}
@@ -73,8 +78,13 @@ body.editing .add{display:none}
 .completed .check:after{transform:rotate(45deg) scale(1)}
 .textwrap{flex:1;min-width:0}.text{font-size:17px;font-weight:650;line-height:1.3;word-break:break-word}.subtask-card .text{font-size:15px}.completed .text{text-decoration:line-through}
 .priority-note{margin-top:4px;color:#7654aa;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
-.subtask-label{margin-top:3px;color:#8b8b92;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
 .empty{padding:20px;border-radius:18px;background:#fff;color:var(--muted);text-align:center;box-shadow:var(--shadow)}
+
+/* Reordenación directa por pulsación larga */
+.normal-drag-source{opacity:.16}
+.normal-drag-ghost{position:fixed!important;z-index:9999!important;margin:0!important;pointer-events:none!important;opacity:.98;transform:scale(1.015);box-shadow:0 16px 38px rgba(0,0,0,.20)!important}
+body.normal-dragging{overscroll-behavior:none;cursor:grabbing}
+body.editing #toggleAllSubtasksBtn{display:none!important}
 
 /* Edición estructural */
 .edit-controls{display:none;align-items:center;gap:6px;flex:0 0 auto}
@@ -127,10 +137,10 @@ body.editing #doneSection{display:none!important}
   </div>
 </section>
 
-<div id="help" class="help">Swipe → convierte una tarea en subtarea de la tarea superior. Swipe ← marca Prioritaria.</div>
+<div id="help" class="help">Mantén pulsada una tarea para moverla. Swipe → la convierte en subtarea de la tarea superior. Swipe ← marca Prioritaria.</div>
 
 <section>
-  <div class="section-head"><h2 class="section-title">Pendientes</h2></div>
+  <div class="section-head"><h2 class="section-title">Pendientes</h2><button id="toggleAllSubtasksBtn" class="subtasks-toggle" type="button">Ocultar subtareas</button></div>
   <div id="pending"></div>
 </section>
 
@@ -149,24 +159,27 @@ body.editing #doneSection{display:none!important}
   <input id="file" type="file" accept=".json,application/json">
 </section>
 
-<div class="version">V4.2</div>
+<div class="version">V4.2.1</div>
 </main>
 
 <script>
 const TASKS_KEY="fs25-general-v30";
 const PRIORITY_KEY="fs25-priority-v321";
 const BACKUP_META_KEY="fs25-backup-meta-v1";
+const COLLAPSE_KEY="fs25-collapse-v421";
 const LEGACY_KEYS={catalog:"fs25-catalog-v30",dailyState:"fs25-daily-v30",view:"fs25-view-v30",autoState:"fs25-auto-v32",pendingState:"fs25-pending-v323"};
 
 const SWIPE_TRIGGER=58;
 const MOVE_CANCEL=12;
+const LONG_PRESS_MS=430;
 const CONSTRUCTION_SUBTASKS=[
   "Pared prefabricada",
   "Viga de madera",
   "Tabla larga",
   "Ladrillo de cemento",
-  "Chapa",
-  "Tabla de madera"
+  "Sacos de cemento",
+  "Chapa de tejado",
+  "Tablas"
 ];
 
 let tasks=[];
@@ -176,13 +189,15 @@ let suppressClickUntil=0;
 let editing=false;
 let draftTasks=[];
 let editDrag=null;
+let collapseState={};
+let normalDrag=null;
 
 const $=id=>document.getElementById(id);
 
 function readJSON(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f}catch(e){return f}}
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function uid(){return "task-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8)}
-function save(){localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));localStorage.setItem(PRIORITY_KEY,JSON.stringify(priorityState))}
+function save(){localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));localStorage.setItem(PRIORITY_KEY,JSON.stringify(priorityState));localStorage.setItem(COLLAPSE_KEY,JSON.stringify(collapseState))}
 
 function normalize(list){
   if(!Array.isArray(list))return [];
@@ -238,8 +253,11 @@ function canonicalize(list){
 function load(){
   tasks=normalize(readJSON(TASKS_KEY,[]));
   priorityState=readJSON(PRIORITY_KEY,{});
+  collapseState=readJSON(COLLAPSE_KEY,{});
   if(!priorityState||typeof priorityState!=="object")priorityState={};
+  if(!collapseState||typeof collapseState!=="object")collapseState={};
   cleanPriority(tasks);
+  cleanCollapse(tasks);
   save();
   updateBackupStatus();
 }
@@ -249,10 +267,17 @@ function cleanPriority(list){
   Object.keys(priorityState).forEach(id=>{if(!ids.has(id))delete priorityState[id]});
 }
 
+function cleanCollapse(list){
+  const validParents=new Set(
+    list.filter(t=>!t.parentId&&list.some(c=>c.parentId===t.id)).map(t=>t.id)
+  );
+  Object.keys(collapseState).forEach(id=>{if(!validParents.has(id))delete collapseState[id]});
+}
+
 function rootsOf(list=tasks){return list.filter(t=>!t.parentId)}
 function childrenOf(parentId,list=tasks){return list.filter(t=>t.parentId===parentId)}
 function taskById(id,list=tasks){return list.find(t=>t.id===id)}
-function incompleteCount(){return tasks.filter(t=>!t.done).length}
+function incompleteCount(){return rootsOf(tasks).filter(t=>!t.done).length}
 
 function render(){
   if(editing){renderEdit();return}
@@ -267,7 +292,7 @@ function render(){
   const count=incompleteCount();
   $("counter").textContent=count===1?"1 tarea pendiente":`${count} tareas pendientes`;
   $("doneSection").style.display=completedRoots.length?"block":"none";
-  $("help").textContent="Swipe → convierte una tarea en subtarea de la tarea superior. Swipe ← marca Prioritaria.";
+  $("help").textContent="Mantén pulsada una tarea para moverla. Swipe → la convierte en subtarea de la tarea superior. Swipe ← marca Prioritaria.";
 
   if(!pendingRoots.length){
     const e=document.createElement("div");
@@ -279,28 +304,42 @@ function render(){
   }
 
   completedRoots.forEach(root=>$("done").appendChild(normalGroup(root)));
+  updateGlobalSubtaskButton();
 }
 
 function normalGroup(root){
   const group=document.createElement("div");
   group.className="task-group";
-  group.appendChild(normalCard(root,false));
+  group.dataset.rootId=root.id;
+
+  const children=childrenOf(root.id);
+  const rootCard=normalCard(root,false,children.length>0);
+  group.appendChild(rootCard);
 
   const childList=document.createElement("div");
   childList.className="subtask-list";
-  childrenOf(root.id).forEach(child=>childList.appendChild(normalCard(child,true)));
+  childList.dataset.parentId=root.id;
+  childList.style.display=collapseState[root.id]?"none":"";
+  children.forEach(child=>childList.appendChild(normalCard(child,true,false)));
   group.appendChild(childList);
+
+  bindRootGestures(group,rootCard.querySelector(".task-content"),root.id,root.done);
   return group;
 }
 
-function normalCard(task,isChild){
+function normalCard(task,isChild,hasChildren=false){
   const c=document.createElement("div");
-  c.className="task-card"+(isChild?" subtask-card":"")+(task.done?" completed":"")+(priorityState[task.id]?" priority":"");
+  c.className="task-card"
+    +(isChild?" subtask-card":"")
+    +(hasChildren?" has-subtasks":"")
+    +(task.done?" completed":"")
+    +(priorityState[task.id]?" priority":"");
   c.dataset.id=task.id;
 
   const leftAction=document.createElement("div");
   leftAction.className="swipe-action left";
-  leftAction.textContent=isChild?"Subtarea":"↳ Subtarea";
+  leftAction.textContent=isChild?"":"↳ Subtarea";
+  if(isChild)leftAction.style.display="none";
 
   const rightAction=document.createElement("div");
   rightAction.className="swipe-action right";
@@ -320,13 +359,6 @@ function normalCard(task,isChild){
   text.textContent=task.text;
   wrap.appendChild(text);
 
-  if(isChild){
-    const tag=document.createElement("div");
-    tag.className="subtask-label";
-    tag.textContent="Subtarea";
-    wrap.appendChild(tag);
-  }
-
   if(priorityState[task.id]){
     const n=document.createElement("div");
     n.className="priority-note";
@@ -335,17 +367,289 @@ function normalCard(task,isChild){
   }
 
   content.append(check,wrap);
+
+  if(!isChild&&hasChildren){
+    const collapse=document.createElement("button");
+    collapse.type="button";
+    collapse.className="collapse-btn";
+    collapse.textContent=collapseState[task.id]?"›":"⌄";
+    collapse.setAttribute("aria-label",collapseState[task.id]?"Mostrar subtareas":"Ocultar subtareas");
+    collapse.setAttribute("aria-expanded",collapseState[task.id]?"false":"true");
+    collapse.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});
+    collapse.addEventListener("mousedown",e=>e.stopPropagation());
+    collapse.addEventListener("pointerdown",e=>e.stopPropagation());
+    collapse.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      toggleCollapse(task.id);
+    });
+    content.appendChild(collapse);
+  }
+
   c.append(leftAction,rightAction,content);
 
   content.addEventListener("contextmenu",e=>e.preventDefault());
-  bindSwipe(content,task.id,isChild);
+  if(isChild)bindSwipe(content,task.id,true);
 
   content.addEventListener("click",e=>{
+    if(e.target.closest(".collapse-btn"))return;
     if(Date.now()<suppressClickUntil){e.preventDefault();return}
     toggleDone(task.id);
   });
 
   return c;
+}
+
+function toggleCollapse(id){
+  if(collapseState[id])delete collapseState[id];
+  else collapseState[id]=true;
+  save();
+  render();
+}
+
+function updateGlobalSubtaskButton(){
+  const button=$("toggleAllSubtasksBtn");
+  const parents=rootsOf(tasks).filter(root=>childrenOf(root.id).length>0);
+
+  if(!parents.length){
+    button.style.display="none";
+    return;
+  }
+
+  button.style.display="inline-block";
+  const allCollapsed=parents.every(root=>collapseState[root.id]===true);
+  button.textContent=allCollapsed?"Mostrar subtareas":"Ocultar subtareas";
+}
+
+function toggleAllSubtasks(){
+  const parents=rootsOf(tasks).filter(root=>childrenOf(root.id).length>0);
+  if(!parents.length)return;
+
+  const allCollapsed=parents.every(root=>collapseState[root.id]===true);
+  parents.forEach(root=>{
+    if(allCollapsed)delete collapseState[root.id];
+    else collapseState[root.id]=true;
+  });
+
+  save();
+  render();
+}
+
+function bindRootGestures(group,content,id,isDone){
+  let timer=null;
+  let sx=0,sy=0,dx=0,dy=0;
+  let horizontal=false;
+  let dragging=false;
+
+  const clearTimer=()=>{
+    if(timer){clearTimeout(timer);timer=null}
+  };
+
+  content.addEventListener("touchstart",e=>{
+    if(e.touches.length!==1||e.target.closest(".collapse-btn"))return;
+    const t=e.touches[0];
+    sx=t.clientX;sy=t.clientY;dx=0;dy=0;horizontal=false;dragging=false;
+    clearTimer();
+    timer=setTimeout(()=>{
+      dragging=true;
+      suppressClickUntil=Date.now()+800;
+      startNormalDrag(group,sy);
+    },LONG_PRESS_MS);
+  },{passive:true});
+
+  content.addEventListener("touchmove",e=>{
+    if(e.touches.length!==1)return;
+    const t=e.touches[0];
+    dx=t.clientX-sx;dy=t.clientY-sy;
+
+    if(dragging){
+      e.preventDefault();
+      updateNormalDrag(t.clientY);
+      normalAutoScroll(t.clientY);
+      return;
+    }
+
+    if(Math.abs(dx)>MOVE_CANCEL&&Math.abs(dx)>Math.abs(dy)){
+      clearTimer();
+      horizontal=true;
+      suppressClickUntil=Date.now()+450;
+      e.preventDefault();
+      content.style.transform=`translateX(${Math.max(-78,Math.min(78,dx))}px)`;
+      return;
+    }
+
+    if(Math.abs(dy)>MOVE_CANCEL)clearTimer();
+  },{passive:false});
+
+  content.addEventListener("touchend",()=>{
+    clearTimer();
+    content.style.transform="";
+
+    if(dragging){
+      finishNormalDrag();
+      suppressClickUntil=Date.now()+800;
+      return;
+    }
+
+    if(horizontal){
+      if(dx>SWIPE_TRIGGER&&!isDone)convertToSubtask(id);
+      else if(dx<-SWIPE_TRIGGER)togglePriority(id);
+      suppressClickUntil=Date.now()+500;
+    }
+  },{passive:true});
+
+  content.addEventListener("touchcancel",()=>{
+    clearTimer();
+    content.style.transform="";
+    if(dragging)finishNormalDrag();
+    suppressClickUntil=Date.now()+500;
+  },{passive:true});
+
+  /* Ratón */
+  let mouseDown=false,mouseDragging=false,mouseHorizontal=false;
+  let msx=0,msy=0,mdx=0,mdy=0;
+
+  content.addEventListener("mousedown",e=>{
+    if(e.button!==0||e.target.closest(".collapse-btn"))return;
+    mouseDown=true;mouseDragging=false;mouseHorizontal=false;
+    msx=e.clientX;msy=e.clientY;mdx=0;mdy=0;
+    clearTimer();
+    timer=setTimeout(()=>{
+      if(!mouseDown)return;
+      mouseDragging=true;
+      suppressClickUntil=Date.now()+800;
+      startNormalDrag(group,msy);
+    },LONG_PRESS_MS);
+  });
+
+  window.addEventListener("mousemove",e=>{
+    if(!mouseDown)return;
+    mdx=e.clientX-msx;mdy=e.clientY-msy;
+
+    if(mouseDragging){
+      e.preventDefault();
+      updateNormalDrag(e.clientY);
+      normalAutoScroll(e.clientY);
+      return;
+    }
+
+    if(Math.abs(mdx)>MOVE_CANCEL&&Math.abs(mdx)>Math.abs(mdy)){
+      clearTimer();
+      mouseHorizontal=true;
+      suppressClickUntil=Date.now()+450;
+      content.style.transform=`translateX(${Math.max(-78,Math.min(78,mdx))}px)`;
+      return;
+    }
+
+    if(Math.abs(mdy)>MOVE_CANCEL)clearTimer();
+  });
+
+  window.addEventListener("mouseup",()=>{
+    if(!mouseDown)return;
+    mouseDown=false;
+    clearTimer();
+    content.style.transform="";
+
+    if(mouseDragging){
+      finishNormalDrag();
+      suppressClickUntil=Date.now()+800;
+      return;
+    }
+
+    if(mouseHorizontal){
+      if(mdx>SWIPE_TRIGGER&&!isDone)convertToSubtask(id);
+      else if(mdx<-SWIPE_TRIGGER)togglePriority(id);
+      suppressClickUntil=Date.now()+500;
+    }
+  });
+}
+
+function startNormalDrag(group,startY){
+  if(normalDrag)return;
+
+  const rect=group.getBoundingClientRect();
+  const ghost=group.cloneNode(true);
+  const container=group.parentElement;
+
+  ghost.classList.add("normal-drag-ghost");
+  ghost.style.left=`${rect.left}px`;
+  ghost.style.top=`${rect.top}px`;
+  ghost.style.width=`${rect.width}px`;
+  ghost.style.height=`${rect.height}px`;
+
+  document.body.appendChild(ghost);
+  group.classList.add("normal-drag-source");
+  document.body.classList.add("normal-dragging");
+
+  normalDrag={
+    group,
+    ghost,
+    container,
+    offsetY:Math.max(0,Math.min(rect.height,startY-rect.top))
+  };
+}
+
+function updateNormalDrag(clientY){
+  if(!normalDrag)return;
+
+  const {group,ghost,container,offsetY}=normalDrag;
+  ghost.style.top=`${clientY-offsetY}px`;
+
+  const siblings=[...container.querySelectorAll(":scope > .task-group")].filter(el=>el!==group);
+  let placed=false;
+
+  for(const sibling of siblings){
+    const rect=sibling.getBoundingClientRect();
+    if(clientY<rect.top+rect.height/2){
+      container.insertBefore(group,sibling);
+      placed=true;
+      break;
+    }
+  }
+
+  if(!placed)container.appendChild(group);
+}
+
+function normalAutoScroll(y){
+  const edge=85;
+  if(y<edge)window.scrollBy(0,-12);
+  else if(y>window.innerHeight-edge)window.scrollBy(0,12);
+}
+
+function finishNormalDrag(){
+  if(!normalDrag)return;
+
+  const {group,ghost}=normalDrag;
+  group.classList.remove("normal-drag-source");
+  ghost.remove();
+  document.body.classList.remove("normal-dragging");
+  normalDrag=null;
+
+  syncRootOrderFromDOM();
+  save();
+  render();
+}
+
+function syncRootOrderFromDOM(){
+  const pendingIds=[...$("pending").querySelectorAll(":scope > .task-group")].map(g=>g.dataset.rootId).filter(Boolean);
+  const doneIds=[...$("done").querySelectorAll(":scope > .task-group")].map(g=>g.dataset.rootId).filter(Boolean);
+  const allIds=[...pendingIds,...doneIds];
+  const known=new Set(allIds);
+
+  rootsOf(tasks).forEach(root=>{
+    if(!known.has(root.id))allIds.push(root.id);
+  });
+
+  const byId=new Map(tasks.map(t=>[t.id,t]));
+  const rebuilt=[];
+
+  allIds.forEach(rootId=>{
+    const root=byId.get(rootId);
+    if(!root)return;
+    rebuilt.push(root,...childrenOf(rootId,tasks));
+  });
+
+  tasks=canonicalize(rebuilt);
 }
 
 function bindSwipe(content,id,isChild){
@@ -431,6 +735,8 @@ function convertToSubtask(id){
 
   task.parentId=parent.id;
   block.slice(1).forEach(child=>child.parentId=parent.id);
+  delete collapseState[id];
+  delete collapseState[parent.id];
 
   const remaining=tasks.filter(t=>!blockIds.has(t.id));
   const lastParentIndex=Math.max(...remaining.map((t,i)=>t.id===parent.id||t.parentId===parent.id?i:-1));
@@ -520,7 +826,11 @@ function clearDone(){
   });
 
   tasks=tasks.filter(t=>!removedIds.has(t.id));
-  removedIds.forEach(id=>delete priorityState[id]);
+  removedIds.forEach(id=>{
+    delete priorityState[id];
+    delete collapseState[id];
+  });
+  cleanCollapse(tasks);
   save();render();
 }
 
@@ -558,7 +868,7 @@ function renderEdit(){
   $("pending").innerHTML="";
   $("done").innerHTML="";
   $("doneSection").style.display="none";
-  $("counter").textContent=`${draftTasks.filter(t=>!t.done).length} tareas pendientes`;
+  $("counter").textContent=`${rootsOf(draftTasks).filter(t=>!t.done).length} tareas pendientes`;
   $("help").textContent="Edición: arrastra ≡ para ordenar. Las subtareas pueden moverse entre tareas. ↰ las convierte en tarea principal y ↳ convierte una tarea en subtarea de la superior. Pulsa Guardar al terminar.";
 
   const pendingRoots=rootsOf(draftTasks).filter(t=>!t.done);
@@ -605,13 +915,6 @@ function editCard(task,isChild,canIndent){
   text.className="text";
   text.textContent=task.text;
   wrap.appendChild(text);
-
-  if(isChild){
-    const tag=document.createElement("div");
-    tag.className="subtask-label";
-    tag.textContent="Subtarea";
-    wrap.appendChild(tag);
-  }
 
   const controls=document.createElement("div");
   controls.className="edit-controls";
@@ -826,11 +1129,12 @@ function restoreLegacy(o){
 function backupObject(){
   return {
     format:"FS25_TASKS_BACKUP",
-    schemaVersion:2,
-    appVersion:"4.2",
+    schemaVersion:3,
+    appVersion:"4.2.1",
     exportedAt:new Date().toISOString(),
     tasks:clone(tasks),
     priorityState:clone(priorityState),
+    collapseState:clone(collapseState),
     legacyIndustrialData:legacyData()
   };
 }
@@ -866,14 +1170,17 @@ async function importBackup(file){
     if(v4){
       tasks=normalize(obj.tasks);
       priorityState=obj.priorityState&&typeof obj.priorityState==="object"?clone(obj.priorityState):{};
+      collapseState=obj.collapseState&&typeof obj.collapseState==="object"?clone(obj.collapseState):{};
       restoreLegacy(obj.legacyIndustrialData);
     }else{
       tasks=normalize(obj.generalTasks);
       priorityState=obj.priorityState&&typeof obj.priorityState==="object"?clone(obj.priorityState):{};
+      collapseState={};
       restoreLegacy({catalog:obj.catalog,dailyState:obj.dailyState,view:obj.view,autoState:obj.autoState,pendingState:obj.pendingState});
     }
 
     cleanPriority(tasks);
+    cleanCollapse(tasks);
     save();render();
 
     localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastImport:new Date().toISOString(),fileName:file.name}));
@@ -887,7 +1194,7 @@ async function importBackup(file){
 function updateBackupStatus(){
   const m=readJSON(BACKUP_META_KEY,{});
   if(m.lastExport){
-    $("backupStatus").textContent=`Última copia exportada: ${new Date(m.lastExport).toLocaleString("es-ES")}. Incluye subtareas y datos industriales legacy.`;
+    $("backupStatus").textContent=`Última copia exportada: ${new Date(m.lastExport).toLocaleString("es-ES")}. Incluye subtareas, orden, plegado y datos industriales legacy.`;
   }else if(m.lastImport){
     $("backupStatus").textContent=`Última copia importada: ${new Date(m.lastImport).toLocaleString("es-ES")}.`;
   }
@@ -898,6 +1205,7 @@ $("addBtn").addEventListener("click",addTask);
 $("newTask").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addTask()}});
 $("constructionBtn").addEventListener("click",createConstruction);
 $("clearBtn").addEventListener("click",clearDone);
+$("toggleAllSubtasksBtn").addEventListener("click",toggleAllSubtasks);
 
 $("editBtn").addEventListener("click",()=>{if(editing)saveEdit();else enterEdit()});
 $("cancelEditBtn").addEventListener("click",cancelEdit);
