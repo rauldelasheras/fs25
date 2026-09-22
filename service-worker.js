@@ -1,4 +1,4 @@
-const CACHE='fs25-tasks-v421';
+const CACHE='fs25-tasks-v43';
 const ASSETS=['./manifest.webmanifest','./icon-180.png','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',event=>{

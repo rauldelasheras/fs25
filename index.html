@@ -98,6 +98,21 @@ body.editing .task-content{cursor:default}
 body.editing #doneSection{display:none!important}
 .edit-drop-target{outline:2px dashed #8aa6cf;outline-offset:3px}
 
+
+/* Modal de construcción */
+.modal-backdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:rgba(20,20,24,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.modal-backdrop[hidden]{display:none!important}
+.modal-card{width:min(460px,100%);padding:20px;border-radius:22px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.24)}
+.modal-card h2{margin:0 0 16px;font-size:24px;letter-spacing:-.02em}
+.modal-field{display:block;margin-bottom:14px}
+.modal-field span{display:block;margin:0 0 6px;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.modal-field input{width:100%;min-height:48px;padding:11px 13px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--text);font-size:16px;outline:none;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.modal-field input:focus{border-color:#8aa6cf;box-shadow:0 0 0 3px rgba(89,134,197,.12)}
+.modal-hint{margin:2px 0 12px;color:var(--muted);font-size:12px;line-height:1.4}
+.modal-error{min-height:18px;margin:0 0 8px;color:#b3261e;font-size:12px;font-weight:700}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+body.modal-open{overflow:hidden}
+
 .backup-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding:14px 16px;border-radius:18px;background:#fff;color:var(--text);box-shadow:var(--shadow)}
 .backup-panel{display:none;margin-top:8px;padding:14px;border-radius:18px;background:#fff;box-shadow:var(--shadow)}
 .backup-panel.open{display:block}
@@ -159,7 +174,28 @@ body.editing #doneSection{display:none!important}
   <input id="file" type="file" accept=".json,application/json">
 </section>
 
-<div class="version">V4.2.1</div>
+
+<div id="constructionModal" class="modal-backdrop" hidden>
+  <form id="constructionForm" class="modal-card">
+    <h2>Nueva construcción</h2>
+    <label class="modal-field">
+      <span>Nombre de la fábrica o edificio</span>
+      <input id="constructionName" type="text" autocomplete="off" autocapitalize="sentences" placeholder="Ej. Winery">
+    </label>
+    <label class="modal-field">
+      <span>Precio</span>
+      <input id="constructionPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 150.000 €">
+    </label>
+    <div class="modal-hint">Se calcularán los 7 materiales y se redondeará siempre al palé completo superior.</div>
+    <div id="constructionError" class="modal-error" aria-live="polite"></div>
+    <div class="modal-actions">
+      <button id="constructionCancelBtn" type="button" class="secondary">Cancelar</button>
+      <button type="submit" class="blue">Crear</button>
+    </div>
+  </form>
+</div>
+
+<div class="version">V4.3</div>
 </main>
 
 <script>
@@ -172,14 +208,15 @@ const LEGACY_KEYS={catalog:"fs25-catalog-v30",dailyState:"fs25-daily-v30",view:"
 const SWIPE_TRIGGER=58;
 const MOVE_CANCEL=12;
 const LONG_PRESS_MS=430;
-const CONSTRUCTION_SUBTASKS=[
-  "Pared prefabricada",
-  "Viga de madera",
-  "Tabla larga",
-  "Ladrillo de cemento",
-  "Sacos de cemento",
-  "Chapa de tejado",
-  "Tablas"
+const CONSTRUCTION_REFERENCE_PRICE=100000;
+const CONSTRUCTION_MATERIALS=[
+  {name:"Pared prefabricada", referenceLiters:353.333333},
+  {name:"Viga de madera", referenceLiters:2726},
+  {name:"Tabla larga", referenceLiters:5455},
+  {name:"Ladrillo de cemento", referenceLiters:1675},
+  {name:"Sacos de cemento", referenceLiters:5041},
+  {name:"Chapa de tejado", referenceLiters:1675},
+  {name:"Tablas", referenceLiters:10180}
 ];
 
 let tasks=[];
@@ -805,16 +842,80 @@ function insertNewRoot(root,children=[]){
   tasks=canonicalize(tasks);
 }
 
-function createConstruction(){
-  const name=prompt("Nombre de la fábrica o edificio");
-  if(name===null)return;
-  const clean=name.trim();
-  if(!clean)return;
+function parseConstructionPrice(raw){
+  let s=String(raw||"").trim().replace(/\s/g,"").replace(/€/g,"");
+  if(!s)return NaN;
+
+  const lastComma=s.lastIndexOf(",");
+  const lastDot=s.lastIndexOf(".");
+  const lastSep=Math.max(lastComma,lastDot);
+
+  // Si termina en dos decimales, los conserva. En el resto de casos
+  // interpreta puntos/comas como separadores de miles.
+  if(lastSep>=0&&s.length-lastSep-1===2){
+    const whole=s.slice(0,lastSep).replace(/[^0-9]/g,"");
+    const decimals=s.slice(lastSep+1).replace(/[^0-9]/g,"").slice(0,2);
+    if(!whole)return NaN;
+    return Number(`${whole}.${decimals||"0"}`);
+  }
+
+  const digits=s.replace(/[^0-9]/g,"");
+  return digits?Number(digits):NaN;
+}
+
+function constructionPalletCount(price,referenceLiters){
+  const liters=referenceLiters*(price/CONSTRUCTION_REFERENCE_PRICE);
+  return Math.max(1,Math.ceil(liters/1000));
+}
+
+function openConstructionModal(){
+  $("constructionName").value="";
+  $("constructionPrice").value="";
+  $("constructionError").textContent="";
+  $("constructionModal").hidden=false;
+  document.body.classList.add("modal-open");
+  setTimeout(()=>$("constructionName").focus(),50);
+}
+
+function closeConstructionModal(){
+  $("constructionModal").hidden=true;
+  document.body.classList.remove("modal-open");
+  $("constructionError").textContent="";
+}
+
+function createConstructionFromForm(){
+  const clean=$("constructionName").value.trim();
+  const price=parseConstructionPrice($("constructionPrice").value);
+
+  if(!clean){
+    $("constructionError").textContent="Escribe el nombre de la fábrica o edificio.";
+    $("constructionName").focus();
+    return;
+  }
+
+  if(!Number.isFinite(price)||price<=0){
+    $("constructionError").textContent="Introduce un precio válido.";
+    $("constructionPrice").focus();
+    return;
+  }
 
   const root={id:uid(),text:clean,done:false,parentId:null};
-  const children=CONSTRUCTION_SUBTASKS.map(text=>({id:uid(),text,done:false,parentId:root.id}));
+  const children=CONSTRUCTION_MATERIALS.map(material=>{
+    const pallets=constructionPalletCount(price,material.referenceLiters);
+    const unit=pallets===1?"palé":"palés";
+    return {
+      id:uid(),
+      text:`${material.name} · ${pallets} ${unit}`,
+      done:false,
+      parentId:root.id
+    };
+  });
+
   insertNewRoot(root,children);
-  save();render();
+  delete collapseState[root.id];
+  save();
+  closeConstructionModal();
+  render();
 }
 
 function clearDone(){
@@ -1130,7 +1231,7 @@ function backupObject(){
   return {
     format:"FS25_TASKS_BACKUP",
     schemaVersion:3,
-    appVersion:"4.2.1",
+    appVersion:"4.3",
     exportedAt:new Date().toISOString(),
     tasks:clone(tasks),
     priorityState:clone(priorityState),
@@ -1203,7 +1304,11 @@ function updateBackupStatus(){
 /* ---------- Eventos ---------- */
 $("addBtn").addEventListener("click",addTask);
 $("newTask").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addTask()}});
-$("constructionBtn").addEventListener("click",createConstruction);
+$("constructionBtn").addEventListener("click",openConstructionModal);
+$("constructionCancelBtn").addEventListener("click",closeConstructionModal);
+$("constructionForm").addEventListener("submit",e=>{e.preventDefault();createConstructionFromForm()});
+$("constructionModal").addEventListener("click",e=>{if(e.target===$("constructionModal"))closeConstructionModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("constructionModal").hidden)closeConstructionModal()});
 $("clearBtn").addEventListener("click",clearDone);
 $("toggleAllSubtasksBtn").addEventListener("click",toggleAllSubtasks);
 
